@@ -1,10 +1,11 @@
 import express from 'express';
-
+import fetchOrders from './shop';
 import UserRoutes from '@/routes/user';
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
+  await fetchOrders();
   res.send('This is the API root!');
 });
 

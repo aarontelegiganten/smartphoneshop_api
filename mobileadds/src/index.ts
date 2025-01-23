@@ -18,8 +18,7 @@ app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.use(`/api`, routes);
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+app.use('/api', routes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.listen(PORT, () => {
