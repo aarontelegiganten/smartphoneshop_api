@@ -7,15 +7,28 @@ const query = `
     id:9561
   ) {
       id
+      createdAt
+      comments {internal external}
+      orderLines {productId productTitle variantId variantTitle supplierNumber articleNumber}
   }
 }
 `;
-
+interface OrderLine {
+  productId: string;
+  productTitle: string;
+  variantId: string;
+  variantTitle: string;
+  supplierNumber: string;
+  articleNumber: string;
+}
 // Define TypeScript interfaces for the response data
 interface Order {
   data: {
     orderById: {
       id: string;
+      createdAt: string;
+      comments: Record<string, []>;
+      orderLines: OrderLine[];
     };
   };
 }
@@ -41,7 +54,7 @@ async function fetchOrders(): Promise<Order | undefined> {
 
     // Handle the response data
     const order: Order = response.data;
-    console.log(response.data);
+    console.log(response.data.data.orderById.orderLines[0].articleNumber);
     return order;
   } catch (error) {
     console.error('Error fetching orders:', error);
