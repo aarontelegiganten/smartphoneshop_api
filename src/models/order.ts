@@ -1,15 +1,19 @@
-interface Order {
-  id: number;
+interface OrderLine {
+  productId: string;
+  productTitle: string;
+  variantId: string;
+  variantTitle: string;
+  supplierNumber: string;
+  articleNumber: string;
 }
-
-class OrderModel {
-  order: Order[] = [];
-
-  getOrder(): Order[] {
-    return this.order;
-  }
+// Define TypeScript interfaces for the response data
+export default interface Order {
+  data: {
+    orderById: {
+      id: string;
+      createdAt: string;
+      comments: Record<string, []>;
+      orderLines: OrderLine[];
+    };
+  };
 }
-
-const orderModel = new OrderModel();
-
-export default orderModel;

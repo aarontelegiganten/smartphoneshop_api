@@ -1,18 +1,23 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import type { Request, Response } from 'express';
-import fetchOrders from './shop';
+import fetchOrder from '@/services/fetchOrder';
 import UserRoutes from '@/routes/user';
 import verifyWebhook from '../services/verfifyWebhook';
 
 dotenv.config();
 const router = express.Router();
 
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.get('/', (req: Request, res: Response) => async () => {
   try {
-    const order = await fetchOrders();
-    res.json('This is the order: ' + JSON.stringify(order?.data));
-  } catch (error) {
+    await fetchOrder().then((order) => {
+      if (order === undefined) {
+        res.status(404).send('Order not found');
+      } else {
+        res.status(200).send('This is the order: ' + JSON.stringify(order));
+      }
+    });
+  } catch (error: any) {
     res.status(500).send('Error fetching order');
   }
 });
