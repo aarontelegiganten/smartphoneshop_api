@@ -7,7 +7,7 @@ import swaggerDocument from '../apidoc.json';
 
 import routes from '@/routes/index';
 import WebhookRoute from '@/routes/webhook';
-import mobileAddsRoute from '@/routes/mobileAdds';
+import mobileAddsRoute from '@/routes/mobileadds';
 
 dotenv.config();
 
