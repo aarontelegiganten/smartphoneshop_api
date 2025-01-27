@@ -4,20 +4,18 @@ import getNewAuthToken from '@/services/getNewAuthToken';
 
 // Define the GraphQL query or mutation
 const query = `
-  query {
-  orderById(
-    id:9561
-  ) {
-      id
-      createdAt
-      comments {internal external}
-      orderLines {productId productTitle variantId variantTitle supplierNumber articleNumber}
+query($id: ID!) {
+  orderById(id: $id) {
+    id
+    createdAt
+    comments { internal external }
+    orderLines { productId productTitle variantId variantTitle supplierNumber articleNumber }
   }
-}
+},
 `;
 
 // Function to call the GraphQL API
-async function fetchOrder(): Promise<Order | undefined> {
+async function fetchOrder(id: string): Promise<Order | undefined> {
   try {
     const token = await getNewAuthToken();
     if (token !== null && token !== undefined) {
@@ -26,6 +24,7 @@ async function fetchOrder(): Promise<Order | undefined> {
         'https://shop99794.mywebshop.io/api/graphql',
         {
           query,
+          variables: { id },
         },
         {
           headers: {
