@@ -1,6 +1,4 @@
-import type MobileAddsProduct from './mobileaddsproduct';
-
-export interface Product extends MobileAddsProduct {
+export interface Product {
   id: string;
   quantity: string;
 }

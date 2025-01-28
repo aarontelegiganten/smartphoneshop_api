@@ -5,6 +5,7 @@ import type { Request, Response } from 'express';
 // import UserRoutes from '@/routes/user';
 import verifyWebhook from '@/services/verfifyWebhook';
 import fetchOrder from '@/services/fetchOrder';
+import fetchMobileAddsById from '../services/fetchMobileAddsById';
 
 const router = express.Router();
 
@@ -33,9 +34,30 @@ router.post('/webhook', (req: Request, res: Response, next: any) => {
             if (order === undefined) {
               console.log('Order not found');
             } else {
-              console.log('This is the order: ' + JSON.stringify(order));
+              console.log('Order found:' + JSON.parse(order.data.orderById.id));
+              console.log('This is the articleNummer: ' + JSON.parse(order.data.orderById.orderLines[0].articleNumber));
+              const productId: string = JSON.parse(order.data.orderById.orderLines[0].articleNumber);
+              const supplierNumber: string = order.data.orderById.orderLines[0].supplierNumber.trim();
+              console.log('This is the supplierNumber: ' + supplierNumber);
+              const url: string = 'https://mobileadds.eu/module/xmlfeeds/api?id=1'; // Define the URL
+              if (supplierNumber === '199021') {
+                fetchMobileAddsById(url, productId)
+                  .then((product) => {
+                    if (product !== null && product !== undefined) {
+                      console.log('Fetched Product:', product);
+                    } else {
+                      console.log('Failed to fetch product');
+                    }
+                  })
+                  .catch((error) => {
+                    console.error('Error fetching product:', error);
+                  });
+              } else {
+                console.log('Supplier number does not match');
+              }
             }
           })
+
           .catch((error) => {
             console.error('Error fetching order:', error);
           });
