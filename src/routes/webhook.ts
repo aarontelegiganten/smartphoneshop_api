@@ -25,7 +25,7 @@ router.post('/webhook', (req: Request, res: Response, next: any) => {
 
         const decodedPayload = payload.toString('utf-8');
         const payloadObject = JSON.parse(decodedPayload);
-        console.log('Payload Object Id:', payloadObject.id);
+        // console.log('Payload Object Id:', payloadObject.id);
 
         // Assuming the payload contains an order ID
         const orderId: string = payloadObject.id;
@@ -34,13 +34,15 @@ router.post('/webhook', (req: Request, res: Response, next: any) => {
             if (order === undefined) {
               console.log('Order not found');
             } else {
-              console.log('Order found:' + JSON.parse(order.data.orderById.id));
-              console.log('This is the articleNummer: ' + JSON.parse(order.data.orderById.orderLines[0].articleNumber));
+              // console.log('Order found:' + JSON.parse(order.data.orderById.id));
+              // console.log('This is the articleNummer: ' + JSON.parse(order.data.orderById.orderLines[0].articleNumber));
               const productId: string = JSON.parse(order.data.orderById.orderLines[0].articleNumber);
               const supplierNumber: string = order.data.orderById.orderLines[0].supplierNumber.trim();
               console.log('This is the supplierNumber: ' + supplierNumber);
               const url: string = 'https://mobileadds.eu/module/xmlfeeds/api?id=1'; // Define the URL
-              if (supplierNumber === '199021') {
+              if (supplierNumber === null) {
+                console.log('This is not a mobileadds product');
+              } else if (supplierNumber !== null && supplierNumber === '199021') {
                 fetchMobileAddsById(url, productId)
                   .then((product) => {
                     if (product !== null && product !== undefined) {
