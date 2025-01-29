@@ -7,9 +7,10 @@ const query = `
 query($id: ID!) {
   orderById(id: $id) {
     id
+    totalItems
     createdAt
     comments { internal external }
-    orderLines { productId productTitle variantId variantTitle supplierNumber articleNumber }
+    orderLines { productId productTitle variantId variantTitle supplierNumber articleNumber amount }
   }
 },
 `;

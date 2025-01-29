@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 const clientSecret = process.env.CLIENT_SECRET;
 const clientId = process.env.CLIENT_ID;
+const url = process.env.WEBSHOP_AUTH_TOKEN_URL;
 
 async function getNewAuthToken(): Promise<any> {
   const data = JSON.stringify({
@@ -12,15 +13,16 @@ async function getNewAuthToken(): Promise<any> {
     client_secret: clientSecret,
     scope: '',
   });
+  if (url !== undefined) {
+    const response = await axios.post(url, data, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
 
-  const response = await axios.post(`https://shop99794.mywebshop.io/auth/oauth/token`, data, {
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-  });
-
-  // console.log('this is the response:', response.data);
-  return response.data.access_token;
+    // console.log('this is the response:', response.data);
+    return response.data.access_token;
+  }
 }
 
 export default getNewAuthToken;

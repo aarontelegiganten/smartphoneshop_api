@@ -10,13 +10,13 @@ dotenv.config();
 // const webhookToken = process.env.WEBHOOKTOKEN;
 
 router.get('/', (req: Request, res: Response) => {
-  getPrestaShopAddressId('https://webservice_key@mobileadds.eu/api/eutradingorder/?action=get_addresses')
+  getPrestaShopAddressId()
     .then((data) => {
       console.log('Address ID:', data);
       res.status(200).send(data);
     })
     .catch((error) => {
-      console.error('Error fetching address ID:', error);
+      console.error('Error fetching address ID:', error.data);
       res.status(500).send('Error fetching address ID');
     });
   // res.status(200).send('Welcome to the SmartPhoneShop API');

@@ -9,3 +9,8 @@ export interface Prestashop {
   };
   products: Product[];
 }
+
+export interface Address {
+  id: string;
+  href: string;
+}
