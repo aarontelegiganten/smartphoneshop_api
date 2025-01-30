@@ -30,7 +30,7 @@ if (serviceKey == null || serviceKey.trim() === '') {
 }
 
 const authorizationKey = Buffer.from(`${serviceKey}:`).toString('base64'); // Encode the API key in Base64
-console.log('Authorization Key:', `Basic ${authorizationKey}`);
+// console.log('Authorization Key:', `Basic ${authorizationKey}`);
 const url = `https://${serviceKey}@mobileadds.eu/api/eutradingorder/`;
 async function sendPrestashopXml(data: Prestashop): Promise<void> {
   const xmlData = createPrestashopXml(data);
@@ -45,7 +45,6 @@ async function sendPrestashopXml(data: Prestashop): Promise<void> {
         Accept: 'application/xml',
       },
     });
-    console.log('Response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error sending Prestashop XML:', error);

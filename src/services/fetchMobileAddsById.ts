@@ -10,13 +10,13 @@ async function fetchMobileAddsById(url: string, productId: string): Promise<Mobi
         Accept: 'application/xml',
       },
       params: {
-        product_id: productId, // Assuming the API supports querying by ID
+        product_id: productId,
       },
     });
 
     // Parse the XML response
     const parsedXml = await parseStringPromise(xmlResponse.data as string);
-    console.log('Parsed XML:', parsedXml);
+    // console.log('Parsed XML:', parsedXml);
 
     // Assuming the XML structure has a root element named 'product'
     const productsData: MobileAddsProduct[] = parsedXml.products?.product;

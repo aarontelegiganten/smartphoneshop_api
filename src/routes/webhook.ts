@@ -1,8 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import type { Request, Response } from 'express';
-// import WebhookRoutes from '@/routes/webhook';
-// import UserRoutes from '@/routes/user';
 import verifyWebhook from '@/services/verfifyWebhook';
 import fetchOrder from '@/services/fetchOrder';
 import getPrestaShopAddressId from '@/services/getPrestaShopAddressId';
@@ -27,22 +25,13 @@ router.post('/webhook', (req: Request, res: Response, next: any) => {
 
         const decodedPayload = payload.toString('utf-8');
         const payloadObject = JSON.parse(decodedPayload);
-        // console.log('Payload Object Id:', payloadObject.id);
-
-        // Assuming the payload contains an order ID
         const orderId: string = payloadObject.id;
         fetchOrder(orderId)
           .then((order) => {
             if (order === undefined) {
               console.log('Order not found');
             } else {
-              // console.log('Order found:' + JSON.parse(order.data.orderById.id));
-              // console.log('This is the articleNummer: ' + JSON.parse(order.data.orderById.orderLines[0].articleNumber));
-              // const productId: string = JSON.parse(order.data.orderById.orderLines[0].articleNumber);
               let supplierNumber: string = order.data.orderById.orderLines[0].supplierNumber;
-              // const productQuantity: string = order.data.orderById.totalItems;
-
-              // const url: string = 'https://mobileadds.eu/module/xmlfeeds/api?id=1'; // Define the URL
               if (supplierNumber === null) {
                 console.log('This is not a mobileadds product');
               } else if (supplierNumber !== null && supplierNumber === '199021') {
@@ -53,7 +42,7 @@ router.post('/webhook', (req: Request, res: Response, next: any) => {
                 }));
                 getPrestaShopAddressId()
                   .then((addressId) => {
-                    console.log('Address ID:', addressId);
+                    // console.log('Address ID:', addressId);
                     if (addressId !== null) {
                       const shopOrder: Prestashop = {
                         address: { id: addressId },
