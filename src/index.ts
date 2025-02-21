@@ -31,7 +31,7 @@ app.use('/api', WebhookRoute);
 app.use('/api', mobileAddsRoute);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-const PORT = process.env.PORT ?? 8000;
+const PORT = process.env.PORT ?? 8080;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
