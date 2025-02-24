@@ -1,10 +1,19 @@
-version: "3.8"
-
 services:
   app:
-    build: .
+    build:
+      context: .
+      target: dev  # Use the development stage of the Dockerfile
     ports:
       - "8080:8080"
     env_file:
-      - .env 
+      - .env
     restart: always
+    volumes:
+      - .:/app  # Mount local files to the container
+      - /app/node_modules  # Prevent overwriting node_modules
+    command: ["npm", "run", "dev"]  # Run nodemon inside the container
+
+
+
+
+

@@ -1,32 +1,21 @@
-# Base stage for building
-FROM node:20-alpine3.18 AS base
-
+# Base Stage
+FROM node:20-alpine AS base
 WORKDIR /app
-
-# Install dependencies first for caching
 COPY package*.json tsconfig.json ./
-RUN npm ci
+RUN npm install
+COPY . .  
 
-# Copy the rest of the app
-COPY . .
-
-# Build the project
-RUN npm run build
-
-# Production stage
-FROM node:20-alpine3.18
-
+# Development Stage
+FROM node:20-alpine AS dev
 WORKDIR /app
+COPY --from=base /app /app
+RUN npm install --include=dev
+CMD ["npm", "run", "dev"]  # Run nodemon in development
 
-# Copy only necessary files for production
+# Production Stage
+FROM node:20-alpine AS prod
+WORKDIR /app
+COPY --from=base /app/build ./build
 COPY package*.json ./
 RUN npm ci --production
-
-# Copy built files from the base stage
-COPY --from=base /app/build ./build
-
-# Expose port
-EXPOSE 8080
-
-# Use the start script
 CMD ["npm", "start"]
