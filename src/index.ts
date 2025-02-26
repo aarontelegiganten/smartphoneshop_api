@@ -8,6 +8,7 @@ import swaggerDocument from '../apidoc.json';
 import routes from '@/routes/index';
 import WebhookRoute from '@/routes/webhook';
 import mobileAddsRoute from '@/routes/mobileadds';
+import mailchimpRoutes from '@/routes/mailchimpRoutes';
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use(express.json());
 app.use('/api', routes);
 app.use('/api', WebhookRoute);
 app.use('/api', mobileAddsRoute);
+app.use('/api', mailchimpRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const PORT = process.env.PORT ?? 8080;

@@ -1,0 +1,17 @@
+import express from 'express';
+import { processCSVController, deleteProductsController, updateProductController, updateProductsFromCSVController } from '@/controllers/mailchimpController';
+
+const router = express.Router();
+
+// ✅ Route: Process CSV and Sync Products
+router.put('/mailchimp/products/csv', processCSVController);
+
+// ✅ Route: Update Single Product
+router.patch('/mailchimp/products/:id', updateProductController);
+
+// ✅ Route: Delete All Products
+router.delete('/mailchimp/products', deleteProductsController);
+
+router.put('/mailchimp/products/csv', updateProductsFromCSVController);
+
+export default router;
