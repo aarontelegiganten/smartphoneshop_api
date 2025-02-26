@@ -1,9 +1,11 @@
 import axios from 'axios';
+import dotenv from 'dotenv';
 
+dotenv.config();
 // --- Configuration ---
-const MAILCHIMP_API_KEY = 'bb5f949a32822e238bb68445866117fa-us13';
-const MAILCHIMP_STORE_ID = 'A01061982';
-const MAILCHIMP_DC = 'us13';
+const MAILCHIMP_API_KEY = process.env.MAILCHIMP_API_KEY;
+const MAILCHIMP_STORE_ID = process.env.MAILCHIMP_STORE_ID;
+const MAILCHIMP_DC = process.env.MAILCHIMP_DC;
 
 const mailchimpApi = axios.create({
   baseURL: `https://${MAILCHIMP_DC}.api.mailchimp.com/3.0/ecommerce/stores/${MAILCHIMP_STORE_ID}`,
