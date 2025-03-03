@@ -77,4 +77,29 @@ router.post('/webhook', (req: Request, res: Response, next: any) => {
   }
 });
 
+
+router.post('/webhook/product-updated', (req: Request, res: Response, next: any) => {
+  if (webhookToken == null || webhookToken.trim() === '') {
+    res.status(500).send('Webhook token is missing');
+  } else {
+    const payload = Buffer.from(JSON.stringify(req.body));
+    const secretKey = webhookToken;
+    try {
+      const isValid: boolean = verifyWebhook(payload, secretKey, req);
+      if (isValid) {
+        res.status(200).send('Webhook verified');
+
+        const decodedPayload = payload.toString('utf-8');
+        const payloadObject = JSON.parse(decodedPayload);
+        console.log(payloadObject)
+  
+      } else {
+        res.status(401).send('Invalid HMAC');
+      }
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  }
+});
+
 export default router;

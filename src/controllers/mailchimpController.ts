@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { readCSV, transformProductData } from '../services/csvService';
 import { deleteAllProducts, syncOrUpdateProductToMailchimp } from '../services/mailchimpService';
 
-const CSV_FILE_PATH = 'static/product_260225-14h23m18s.csv';
+const CSV_FILE_PATH = 'static/test.csv';
 const BASE_URL = 'https://smartphoneshop.dk';
 
 // ✅ Process CSV and Sync All Products

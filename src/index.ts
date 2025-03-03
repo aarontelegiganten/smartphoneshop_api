@@ -6,7 +6,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerDocument from '../apidoc.json';
 
 import routes from '@/routes/index';
-import WebhookRoute from '@/routes/webhook';
+import WebhookRoutes from '@/routes/webhook';
 import mobileAddsRoute from '@/routes/mobileadds';
 import mailchimpRoutes from '@/routes/mailchimpRoutes';
 
@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use('/api', routes);
-app.use('/api', WebhookRoute);
+app.use('/api', WebhookRoutes);
 app.use('/api', mobileAddsRoute);
 app.use('/api', mailchimpRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
