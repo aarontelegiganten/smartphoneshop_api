@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { parseStringPromise } from 'xml2js';
-import MobileAddsProduct from '../models/mobileaddsproduct';
+import MobileAddsProduct from '@/models/mobileaddsproduct';
 
 async function fetchMobileAddsById(url: string, productId: string): Promise<MobileAddsProduct | null> {
   try {

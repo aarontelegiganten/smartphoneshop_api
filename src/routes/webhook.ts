@@ -1,11 +1,11 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import type { Request, Response } from 'express';
-import verifyWebhook from '@/services/verfifyWebhook';
-import fetchOrder from '@/services/fetchOrder';
-import getPrestaShopAddressId from '@/services/getPrestaShopAddressId';
-import sendPrestashopXml from '@/services/createProductXml';
-import type { Prestashop, Product } from '@/models/shop';
+import verifyWebhook from '@/utils/verfifyWebhook';
+import fetchOrder from '@/services/shop99794/fetchOrder';
+import getPrestaShopAddressId from '@/services/xml/getPrestaShopAddressId';
+import sendPrestashopXml from '@/services/xml/createProductXml';
+import type { Prestashop, Product } from '@/models/mobileaddsShop';
 
 const router = express.Router();
 

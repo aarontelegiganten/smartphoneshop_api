@@ -1,6 +1,6 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
-import type { Prestashop } from '../models/shop'; // Ensure the module exists and is correctly named
+import type { Prestashop } from '@/models/mobileaddsShop'; // Ensure the module exists and is correctly named
 
 function createPrestashopXml(data: Prestashop): string {
   const productsXml = data.products
@@ -30,8 +30,9 @@ if (serviceKey == null || serviceKey.trim() === '') {
 }
 
 const authorizationKey = Buffer.from(`${serviceKey}:`).toString('base64'); // Encode the API key in Base64
-// console.log('Authorization Key:', `Basic ${authorizationKey}`);
+
 const url = `https://${serviceKey}@mobileadds.eu/api/eutradingorder/`;
+
 async function sendPrestashopXml(data: Prestashop): Promise<void> {
   const xmlData = createPrestashopXml(data);
 

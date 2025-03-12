@@ -10,7 +10,8 @@
     "lint": "eslint ./src/**/*.ts --fix",
     "format": "prettier --write ./**/*.{ts,json}",
     "test": "jest --coverage=true -w=1 --forceExit --detectOpenHandles --watchAll=false --testPathPattern=src/__tests__ --testPathIgnorePatterns=build",
-    "swagger": "ts-node swagger.ts"
+    "swagger": "ts-node swagger.ts",
+    "generate": "wsdl-tsclient --verbose --trace-warnings -o ./src/generated ./src/ressources/service.wsdl"
   },
   "keywords": [],
   "author": "",
@@ -27,7 +28,9 @@
     "dotenv": "^16",
     "express": "^4.21.2",
     "graphql": "^16.10.0",
+    "soap": "^1.1.8",
     "swagger-ui-express": "^5",
+    "wsdl-tsclient": "^1.7.1",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
@@ -38,7 +41,9 @@
     "@types/express": "^4",
     "@types/jest": "^29",
     "@types/jsonwebtoken": "^9.0.8",
-    "@types/node": "^20",
+    "@types/node": "^20.17.22",
+    "@types/sax": "^1.2.7",
+    "@types/soap": "^0.18.0",
     "@types/swagger-ui-express": "^4",
     "@typescript-eslint/eslint-plugin": "^6",
     "eslint": "^8",

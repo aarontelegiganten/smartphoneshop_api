@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { readCSV, transformProductData } from '../services/csvService';
+import { readCSV, transformProductData } from '../services/csv/csvService';
 import { deleteAllProducts, syncOrUpdateProductToMailchimp } from '../services/mailchimpService';
 
 const CSV_FILE_PATH = 'static/test.csv';
@@ -61,7 +61,6 @@ export async function updateProductsFromCSVController(req: Request, res: Respons
 // ✅ Delete All Products
 export async function deleteProductsController(req: Request, res: Response) {
   try {
-    console.log('🛑 Starting product deletion...');
     await deleteAllProducts();
     console.log('✅ Product deletion completed.');
     res.status(200).json({ message: 'All products deleted successfully' });
