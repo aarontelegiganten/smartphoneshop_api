@@ -5,6 +5,7 @@ import { CreateOrderRequest } from "@/models/YukatelOrderCreate";
 export interface YukatelResponse {
     status: boolean;
     msg: string;
+    orderid?: number;
 }
 
 export async function createOrder(
@@ -12,7 +13,7 @@ export async function createOrder(
     vpnr: number,
     orderData: CreateOrderRequest
 ): Promise<YukatelResponse> {
-    const apiUrl = "/order/create"; // Replace with the actual API base URL if needed
+    const apiUrl = "https://api.yukatel.de/api/order/create"; // Replace with the actual API base URL if needed
 
     try {
         const response = await axios.post<YukatelResponse>(apiUrl, orderData, {
