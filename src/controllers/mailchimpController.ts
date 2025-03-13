@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { readCSV, transformProductData } from '../services/csv/csvService';
-import { deleteAllProducts, syncOrUpdateProductToMailchimp } from '../services/mailchimpService';
+import { deleteAllProducts, syncOrUpdateProductToMailchimp } from '../services/mailchimp/mailchimpService';
 
 const CSV_FILE_PATH = 'static/test.csv';
 const BASE_URL = 'https://smartphoneshop.dk';
