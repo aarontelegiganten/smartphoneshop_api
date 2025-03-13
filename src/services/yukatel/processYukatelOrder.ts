@@ -1,18 +1,18 @@
 import { createOrder } from '@/services/yukatel/createYukatelOrder';
-
-export default async function processYukatelOrder(order: any): Promise<void> {
+import Order , { OrderLine } from '@/models/graphqlOrder';
+export default async function processYukatelOrder(order: Order): Promise<void> {
   try {
     const yukatelOrderRequest = {
-      items: order.data.orderById.orderLines.map((line: any) => ({
-        article_number: line.articleNumber,
-        requested_stock: line.amount,
+      items: order.data.orderById.orderLines.map((orderLine: OrderLine) => ({
+        article_number: Number(orderLine.articleNumber),
+        requested_stock: Number(orderLine.amount),
       })),
-      customer_address_id: order.data.orderById.customerId, 
-      customer_reference: order.data.orderById.reference,
+      customer_address_id: 0, 
+      customer_reference: '21904',
     };
 
     const authcode = process.env.YUKATEL_AUTH_CODE || '';
-    const vpnr = 1234; // You might need to dynamically set this
+    const vpnr = 21904; // You might need to dynamically set this
 
     const response = await createOrder(authcode, vpnr, yukatelOrderRequest);
     console.log('Yukatel Order Response:', response);

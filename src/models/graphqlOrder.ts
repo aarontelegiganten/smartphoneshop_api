@@ -1,4 +1,4 @@
-interface OrderLine {
+export interface OrderLine {
   productId: string;
   productTitle: string;
   variantId: string;

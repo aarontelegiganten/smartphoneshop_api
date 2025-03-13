@@ -47,7 +47,7 @@ router.post('/webhook/order-created', async (req: Request, res: Response) => {
       if (supplierNumber === '199021') {
         // 📌 Process Mobileadds Order
         await processMobileAddsOrder(order);
-      } else if (supplierNumber === 'YUKATEL_SUPPLIER_NUMBER') {
+      } else if (supplierNumber === '505066') {
         // 📌 Process Yukatel Order
         await processYukatelOrder(order);
       } else {
