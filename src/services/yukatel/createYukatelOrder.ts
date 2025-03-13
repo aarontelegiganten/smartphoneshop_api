@@ -5,7 +5,6 @@ import { CreateOrderRequest } from "@/models/YukatelOrderCreate";
 export interface YukatelResponse {
     status: boolean;
     msg: string;
-    order_id: number;
 }
 
 export async function createOrder(
@@ -28,7 +27,6 @@ export async function createOrder(
         return {
             status: false,
             msg: error.response?.data?.msg || "Internal Server Error",
-            order_id: 0, // Default order ID to 0 in case of failure
         };
     }
 }

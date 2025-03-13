@@ -1,5 +1,9 @@
+import dotenv from 'dotenv';
 import { createOrder } from '@/services/yukatel/createYukatelOrder';
 import Order , { OrderLine } from '@/models/graphqlOrder';
+
+dotenv.config();
+7
 export default async function processYukatelOrder(order: Order): Promise<void> {
   try {
     const yukatelOrderRequest = {

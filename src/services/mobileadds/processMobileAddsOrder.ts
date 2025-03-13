@@ -1,10 +1,11 @@
 import getPrestaShopAddressId from '@/services/xml/getPrestaShopAddressId';
 import sendPrestashopXml from '@/services/xml/createProductXml';
 import type { Prestashop, Product } from '@/models/mobileaddsShop';
+import Order, { OrderLine } from '@/models/graphqlOrder';
 
-export default async function processMobileAddsOrder(order: any): Promise<void> {
+export default async function processMobileAddsOrder(order: Order): Promise<void> {
   try {
-    const products: Product[] = order.data.orderById.orderLines.map((line: any) => ({
+    const products: Product[] = order.data.orderById.orderLines.map((line: OrderLine) => ({
       id: line.articleNumber,
       quantity: line.amount,
     }));
