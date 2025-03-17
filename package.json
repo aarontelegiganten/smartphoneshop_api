@@ -19,6 +19,7 @@
   "dependencies": {
     "@apollo/server": "^4.11.3",
     "@ngrok/ngrok": "^1.4.1",
+    "@types/node-schedule": "^2.1.7",
     "@types/xml2js": "^0.4.14",
     "axios": "^1.7.9",
     "body-parser": "^1.20.3",
@@ -28,6 +29,7 @@
     "dotenv": "^16",
     "express": "^4.21.2",
     "graphql": "^16.10.0",
+    "node-schedule": "^2.1.1",
     "soap": "^1.1.8",
     "swagger-ui-express": "^5",
     "wsdl-tsclient": "^1.7.1",

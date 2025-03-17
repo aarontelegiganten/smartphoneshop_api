@@ -1,113 +1,216 @@
 import * as soap from 'soap'; 
 import { Product, ProductGetByIdResponse } from "@/models/soapProduct"; 
-const uniqueValue = Date.now();
-export async function fetchProductById(client: soap.Client, sessionToken: string, productId: number) {
-  try {
-    // Attach session token as a SOAP header
-    const soapHeader = { 
-      sessionToken: sessionToken,
-      uniqueRequest: uniqueValue.toString()
+
+// Constants
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
+
+// Interfaces
+interface ProductResponse {
+  item: Array<{
+    Id: number;
+    ProducerId: number;
+    Producer: {
+      Id: number;
     };
-    client.addSoapHeader(soapHeader);
+    Status: boolean;
+    Stock: number;
+    ItemNumber: string;
+    Price: number;
+    Discount: number;
+    Title: string;
+    CustomData: any;
+  }>;
+}
 
-    // Set the product fields you want to retrieve
-    await new Promise<void>((resolve, reject) => {
-      client.Product_SetFields({ Fields: 'Id,ItemNumber,Status,Title,Discount,Price,Stock,Description,BuyingPrice,Pictures,Variants,DateCreated,DateUpdated,Url' }, (err: any, response: any) => {
-        if (err) return reject('Error setting product fields: ' + err);
-        console.log('Product fields set successfully:', response);
-        resolve();
-      });
-    });
+interface CategoryResponse {
+  Category_GetByIdResult: {
+    Id: number;
+    Name: string;
+    // Add other category fields as needed
+  };
+}
 
-    // Set the variant fields you want to retrieve
-    await new Promise<void>((resolve, reject) => {
-      client.Product_SetVariantFields({ Fields: 'Id' }, (err: any, response: any) => {
-        if (err) return reject('Error setting variant fields: ' + err);
-        // console.log('Variant fields set successfully:', response); // Optional, if you want to log this
-        resolve();
-      });
-    });
+interface SoapError {
+  code: string;
+  message: string;
+  details?: unknown;
+}
 
-    // Ensure productId is an integer
-    const productIdInt = Math.floor(productId);
+interface SoapHeader {
+  sessionToken: string;
+  uniqueRequest: string;
+}
 
-    // Fetch the product by ID
-    const productResponse = await new Promise<any>((resolve, reject) => {
-      client.Product_GetById({ ProductId: productIdInt }, (err: any, response: any) => {
-        if (err) return reject('Error fetching product: ' + err);
-        // Log the full response to debug if necessary
-        // console.log('Full Product Response:', JSON.stringify(response, null, 2));
-
-        if (response && response.Product_GetByIdResult) {
-          resolve(response.Product_GetByIdResult);
-        } else {
-          reject('❌ Failed to fetch product: No valid response field.');
-        }
-      });
-    });
-
-    // Return the product if found
-    // console.log('✅ Product fetched:', productResponse);
-    return productResponse;
-
-  } catch (error) {
-    // console.error('Error in fetchProductById:', error);
-    throw error; // Rethrow or return the error, depending on your needs
+// Utility functions
+function validateProductId(productId: number): void {
+  if (!Number.isInteger(productId) || productId <= 0) {
+    throw new Error(`Invalid product ID: ${productId}`);
   }
 }
 
-
-
-
-
-  // Map the SOAP response to the Product type
-  function mapResponseToProduct(response: ProductGetByIdResponse): Product {
-    return {
-      BuyingPrice: response.BuyingPrice || 0,  // Provide defaults for optional fields
-      CallForPrice: response.CallForPrice || false,
-      CategoryId: response.CategoryId || 0,
-      Category: response.Category || undefined,  // Assuming Category can be null or undefined
-      DateCreated: response.DateCreated || '',
-      DateUpdated: response.DateUpdated || '',
-      DeliveryId: response.DeliveryId || 0,
-      DeliveryTimeId: response.DeliveryTimeId || 0,
-      Description: response.Description || '',
-      DescriptionLong: response.DescriptionLong || '',
-      DescriptionShort: response.DescriptionShort || '',
-      DisableOnEmpty: response.DisableOnEmpty || false,
-      Discount: response.Discount || 0,
-      DiscountGroupId: response.DiscountGroupId || 0,
-      DiscountType: response.DiscountType || '',
-      Ean: response.Ean || '',
-      FocusCart: response.FocusCart || false,
-      FocusFrontpage: response.FocusFrontpage || false,
-      GuidelinePrice: response.GuidelinePrice || 0,
-      Id: response.Id,
-      ItemNumber: response.ItemNumber || '',
-      ItemNumberSupplier: response.ItemNumberSupplier || '',
-      LanguageISO: response.LanguageISO || '',
-      MinAmount: response.MinAmount || 1,  // Provide a default value for MinAmount
-      Online: response.Online || false,
-      Price: response.Price || 0,
-      ProducerId: response.ProducerId || 0,
-      ProductUrl: response.ProductUrl || '',
-      RelatedProductIds: response.RelatedProductIds || [],
-      RelationCode: response.RelationCode || '',
-      SeoCanonical: response.SeoCanonical || '',
-      SeoDescription: response.SeoDescription || '',
-      SeoKeywords: response.SeoKeywords || '',
-      SeoLink: response.SeoLink || '',
-      SeoTitle: response.SeoTitle || '',
-      Sorting: response.Sorting || 0,
-      Status: response.Status || false,
-      Stock: response.Stock || 0,
-      StockLow: response.StockLow || 0,
-      Title: response.Title || '',
-      Type: response.Type || undefined,
-      UnitId: response.UnitId || 0,
-      Url: response.Url || '',
-      VatGroupId: response.VatGroupId || 0,
-      Weight: response.Weight || 0,
-      VariantTypes: response.VariantTypes || ''
-    };
+function validateItemNumber(itemNumber: string): void {
+  if (!itemNumber || typeof itemNumber !== 'string' || itemNumber.trim() === '') {
+    throw new Error(`Invalid item number: ${itemNumber}`);
   }
+}
+
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = MAX_RETRIES,
+  delay: number = RETRY_DELAY
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      await new Promise(resolve => setTimeout(resolve, delay * attempt));
+    }
+  }
+  throw new Error('Operation failed after retries');
+}
+
+function createSoapHeader(sessionToken: string): SoapHeader {
+  return {
+    sessionToken,
+    uniqueRequest: Date.now().toString()
+  };
+}
+
+// Main functions
+export async function fetchProductById(client: soap.Client, sessionToken: string, productId: number) {
+  try {
+    validateProductId(productId);
+    const soapHeader = createSoapHeader(sessionToken);
+    client.addSoapHeader(soapHeader);
+
+    await withRetry(async () => {
+      await new Promise<void>((resolve, reject) => {
+        client.Product_SetFields({ 
+          Fields: 'Id,ItemNumber,CustomData,Status,Producer,ProducerId,Title,Discount,Price,Stock,Description,BuyingPrice,Pictures,Variants,DateCreated,DateUpdated,Url' 
+        }, (err: unknown) => {
+          if (err) reject(new Error(`Error setting product fields: ${err}`));
+          resolve();
+        });
+      });
+    });
+
+    await withRetry(async () => {
+      await new Promise<void>((resolve, reject) => {
+        client.Product_SetVariantFields({ Fields: 'Id' }, (err: unknown) => {
+          if (err) reject(new Error(`Error setting variant fields: ${err}`));
+          resolve();
+        });
+      });
+    });
+
+    return await withRetry(async () => {
+      return new Promise<ProductResponse>((resolve, reject) => {
+        client.Product_GetById({ ProductId: Math.floor(productId) }, (err: unknown, response: unknown) => {
+          if (err) reject(new Error(`Error fetching product: ${err}`));
+          resolve({ item: response as any[] });
+        });
+      });
+    });
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function fetchProductByItemNumber(client: soap.Client, sessionToken: string, itemNumber: string) {
+  try {
+    validateItemNumber(itemNumber);
+    const soapHeader = createSoapHeader(sessionToken);
+    client.addSoapHeader(soapHeader);
+
+    await withRetry(async () => {
+      await new Promise<void>((resolve, reject) => {
+        client.Product_SetFields({ 
+          Fields: 'Id,ItemNumber,CustomData,Status,Producer,ProducerId,Title,Discount,Price,Stock' 
+        }, (err: unknown) => {
+          if (err) reject(new Error(`Error setting product fields: ${err}`));
+          resolve();
+        });
+      });
+    });
+
+    await withRetry(async () => {
+      await new Promise<void>((resolve, reject) => {
+        client.Product_SetVariantFields({ Fields: 'Id' }, (err: unknown) => {
+          if (err) reject(new Error(`Error setting variant fields: ${err}`));
+          resolve();
+        });
+      });
+    });
+
+    return await withRetry(async () => {
+      return new Promise<ProductResponse>((resolve, reject) => {
+        client.Product_GetByItemNumber({ ItemNumber: itemNumber }, (err: unknown, response: unknown) => {
+          if (err) {
+            reject(new Error(`Error fetching product: ${err}`));
+            return;
+          }
+          
+          // Handle the response structure
+          const result = response as any;
+          if (result?.Product_GetByItemNumberResult?.item) {
+            resolve({ item: result.Product_GetByItemNumberResult.item });
+          } else if (Array.isArray(result)) {
+            resolve({ item: result });
+          } else {
+            resolve({ item: [] });
+          }
+        });
+      });
+    });
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function fetchProductsByCategory(client: soap.Client, sessionToken: string, categoryId: number) {
+  try {
+    validateProductId(categoryId);
+    const soapHeader = createSoapHeader(sessionToken);
+    client.addSoapHeader(soapHeader);
+
+    const productsResponse = await withRetry(async () => {
+      return new Promise<ProductResponse>((resolve, reject) => {
+        client.Product_GetByCategory({ CategoryId: Math.floor(categoryId) }, (err: unknown, response: unknown) => {
+          if (err) reject(new Error(`Error fetching products by category: ${err}`));
+          resolve({ item: response as any[] });
+        });
+      });
+    });
+
+    return productsResponse.item || [];
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function fetchCategoryById(client: soap.Client, sessionToken: string, categoryId: number) {
+  try {
+    validateProductId(categoryId);
+    const soapHeader = createSoapHeader(sessionToken);
+    client.addSoapHeader(soapHeader);
+
+    const category = await withRetry(async () => {
+      return new Promise<CategoryResponse>((resolve, reject) => {
+        client.Category_GetById({ CategoryId: Math.floor(categoryId) }, (err: unknown, response: unknown) => {
+          if (err) reject(new Error(`Error fetching category: ${err}`));
+          if (response && typeof response === 'object' && 'Category_GetByIdResult' in response) {
+            resolve(response as CategoryResponse);
+          } else {
+            reject(new Error('Failed to fetch category: No valid response field'));
+          }
+        });
+      });
+    });
+
+    return category.Category_GetByIdResult;
+  } catch (error) {
+    throw error;
+  }
+}

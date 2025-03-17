@@ -3,7 +3,9 @@ import { createOrder } from '@/services/yukatel/createYukatelOrder';
 import Order , { OrderLine } from '@/models/graphqlOrder';
 
 dotenv.config();
-7
+const authcode = process.env.YUKATEL_AUTH_CODE || '';
+const vpnr = Number(process.env.YUKATEL_VPNR);
+
 export default async function processYukatelOrder(order: Order): Promise<void> {
   try {
     const yukatelOrderRequest = {
@@ -12,12 +14,10 @@ export default async function processYukatelOrder(order: Order): Promise<void> {
         requested_stock: Number(orderLine.amount),
       })),
       customer_address_id: 0, 
-      customer_reference: '21904',
+      customer_reference: vpnr.toString(),
     };
 
-    const authcode = process.env.YUKATEL_AUTH_CODE || '';
-    const vpnr = 21904; // You might need to dynamically set this
-
+   
     const response = await createOrder(authcode, vpnr, yukatelOrderRequest);
     console.log('Yukatel Order Response:', response);
   } catch (error) {
