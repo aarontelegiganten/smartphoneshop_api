@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type Order from '../../models/graphqlOrder';
+import type Order from '@/models/graphqlOrder';
 import getNewAuthToken from '@/utils/getNewAuthToken';
 
 // Define the GraphQL query or mutation

@@ -1,17 +1,46 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import type { Request, Response } from 'express';
-import verifyWebhook from '@/utils/verfifyWebhook';
+import { Router } from 'express';
+import { Request, Response } from 'express';
+import { verifyWebhook } from '@/utils/verifyWebhook';
 import fetchOrder from '@/services/shop99794/fetchOrder';
-import processYukatelOrder from '@/services/yukatel/processYukatelOrder';
 import processMobileAddsOrder from '@/services/mobileadds/processMobileAddsOrder';
+import processYukatelOrder from '@/services/yukatel/processYukatelOrder';
+import rateLimit from 'express-rate-limit';
+import { isUpdateRunning } from '@/controllers/schedulerController';
 
-const router = express.Router();
-dotenv.config();
+const router = Router();
+
+// Rate limiter for webhook routes
+const webhookLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+
+// Queue for webhook processing
+let webhookQueue: any[] = [];
+let isProcessingQueue = false;
+
+async function processWebhookQueue() {
+  if (isProcessingQueue || webhookQueue.length === 0) return;
+  
+  isProcessingQueue = true;
+  while (webhookQueue.length > 0) {
+    const webhook = webhookQueue.shift();
+    if (!webhook) continue;
+
+    try {
+      await webhook.process();
+    } catch (error) {
+      console.error('Error processing webhook from queue:', error);
+      // Optionally retry failed webhooks
+      webhookQueue.push(webhook);
+    }
+  }
+  isProcessingQueue = false;
+}
 
 const webhookToken = process.env.WEBHOOKTOKEN;
 
-router.post('/webhook/order-created', async (req: Request, res: Response) => {
+router.post('/webhook/order-created', webhookLimiter, async (req: Request, res: Response) => {
   if (!webhookToken || webhookToken.trim() === '') {
     return res.status(500).send('Webhook token is missing');
   }
@@ -25,44 +54,55 @@ router.post('/webhook/order-created', async (req: Request, res: Response) => {
       return res.status(401).send('Invalid HMAC');
     }
 
-    res.status(200).send('Webhook verified');
+    // Send immediate response
+    res.status(200).send('Webhook received and queued for processing');
 
+    // Queue the webhook processing
     const payloadObject = JSON.parse(payload.toString('utf-8'));
     const orderId: string = payloadObject.id;
 
-    try {
-      const order = await fetchOrder(orderId);
-      if (!order) {
-        console.log('Order not found');
-        return;
-      }
+    webhookQueue.push({
+      process: async () => {
+        try {
+          const order = await fetchOrder(orderId);
+          if (!order) {
+            console.log('Order not found');
+            return;
+          }
 
-      const supplierNumber: string | null = order.data.orderById.orderLines[0]?.supplierNumber?.trim() || null;
+          const supplierNumber: string | null = order.data.orderById.orderLines[0]?.supplierNumber?.trim() || null;
 
-      if (!supplierNumber) {
-        console.log('This is not a Mobileadds or Yukatel product');
-        return;
-      }
+          if (!supplierNumber) {
+            console.log('This is not a Mobileadds or Yukatel product');
+            return;
+          }
 
-      if (supplierNumber === '199021') {
-        // 📌 Process Mobileadds Order
-        await processMobileAddsOrder(order);
-      } else if (supplierNumber === '505066') {
-        // 📌 Process Yukatel Order
-        await processYukatelOrder(order);
-      } else {
-        console.log(`Unknown supplier: ${supplierNumber}`);
+          if (supplierNumber === '199021') {
+            //Process Mobileadds Order
+            await processMobileAddsOrder(order);
+          } else if (supplierNumber === '505066') {
+            //Process Yukatel Order
+            await processYukatelOrder(order);
+          } else {
+            console.log(`Unknown supplier: ${supplierNumber}`);
+          }
+        } catch (error) {
+          console.error('Error processing order:', error);
+        }
       }
-    } catch (error) {
-      console.error('Error processing order:', error);
-    }
+    });
+
+    // Start processing the queue if not already processing
+    processWebhookQueue();
+
   } catch (error: any) {
+    console.error('Error in webhook processing:', error);
     res.status(400).send(error.message);
   }
 });
 
 // 📌 Product Update Webhook (Optional, Keep As Is)
-router.post('/webhook/product-updated', (req: Request, res: Response) => {
+router.post('/webhook/product-updated', webhookLimiter, (req: Request, res: Response) => {
   if (!webhookToken || webhookToken.trim() === '') {
     return res.status(500).send('Webhook token is missing');
   }

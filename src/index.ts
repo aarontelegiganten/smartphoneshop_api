@@ -10,7 +10,8 @@ import WebhookRoutes from '@/routes/webhook';
 import mobileAddsRoute from '@/routes/mobileadds';
 import mailchimpRoutes from '@/routes/mailchimpRoutes';
 import productRoutes from '@/routes/soapProductRoutes';
-import { initializeStockUpdateScheduler, stopStockUpdateScheduler } from './controllers/productController';
+import { initializeStockUpdateScheduler } from '@/controllers/schedulerController';
+
 dotenv.config();
 
 const app = express();

@@ -157,51 +157,6 @@ export async function updateProductController(req: Request, res: Response) {
   }
 }
 
-interface SoapClient {
-  end: (callback: (err: any) => void) => void;
-  Product_Update: (params: any, callback: (err: any, result: any) => void) => void;
-  Product_GetList: (params: any, callback: (err: any, result: { Product_GetListResult: { item: any[] | any } }) => void) => void;
-}
-
-async function fetchAndUpdateStock() {
-  let client: soap.Client | undefined;
-  try {
-    client = await createSoapClient();
-    if (!username || !password) {
-      throw new Error("Username and password are required");
-    }
-
-    const sessionToken = await authenticate(client, username, password);
-    const stockList = await fetchStockListWithRetry();
-    
-    if (!stockList || stockList.length === 0) {
-      return;
-    }
-
-    const articleNoProperty = 'articelno';
-    
-    if (!stockList[0].hasOwnProperty(articleNoProperty)) {
-      return;
-    }
-
-    const BATCH_SIZE = 5;
-    
-    for (let i = 0; i < stockList.length; i += BATCH_SIZE) {
-      const batch = stockList.slice(i, i + BATCH_SIZE);
-      
-      if (!client) {
-        throw new Error("SOAP client is not initialized");
-      }
-      const currentClient = client;
-      await Promise.all(
-        batch.map(stockItem => updateProductWithRetry(currentClient, sessionToken, stockItem))
-      );
-    }
-  } catch (error) {
-    throw error;
-  }
-}
-
 async function fetchStockListWithRetry(maxRetries = 3): Promise<any[]> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -242,9 +197,11 @@ async function updateProductWithRetry(
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
+      console.log(`Attempting to update product ${articleNo} (attempt ${attempt}/${maxRetries})`);
       const productResponse = await fetchProductByItemNumber(client, sessionToken, articleNo);
       
       if (!productResponse?.item?.[0]) {
+        console.log(`Product ${articleNo} not found`);
         return;
       }
 
@@ -252,6 +209,7 @@ async function updateProductWithRetry(
       const stockInt = parseInt(quantity, 10);
       
       if (isNaN(stockInt)) {
+        console.log(`Invalid stock quantity for product ${articleNo}: ${quantity}`);
         return;
       }
 
@@ -267,44 +225,78 @@ async function updateProductWithRetry(
         client.Product_Update(
           updateData,
           (err: any, result: { Product_UpdateResult: number[] }) => {
-            if (err) reject(err);
-            else resolve(result);
+            if (err) {
+              console.error(`Error updating product ${articleNo}:`, err);
+              reject(err);
+            } else {
+              console.log(`Successfully updated product ${articleNo} to stock ${stockInt}`);
+              resolve(result);
+            }
           }
         );
       });
 
       return;
     } catch (error) {
+      console.error(`Error updating product ${articleNo} (attempt ${attempt}/${maxRetries}):`, error);
       if (attempt === maxRetries) throw error;
       await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
     }
   }
 }
 
-let stockUpdateJob: schedule.Job | null = null;
+export async function fetchAndUpdateStock() {
+  let client: soap.Client | undefined;
+  const startTime = Date.now();
+  try {
+    console.log('Starting stock update process...');
+    client = await createSoapClient();
+    if (!username || !password) {
+      throw new Error("Username and password are required");
+    }
 
-export function initializeStockUpdateScheduler() {
-  if (stockUpdateJob) {
-    return;
-  }
+    console.log('Authenticating...');
+    const sessionToken = await authenticate(client, username, password);
+    
+    console.log('Fetching stock list...');
+    const stockList = await fetchStockListWithRetry();
+    
+    if (!stockList || stockList.length === 0) {
+      console.log('No stock items found to update');
+      return;
+    }
 
-  // Run initial update immediately
-  fetchAndUpdateStock().catch(error => {
-    console.error('Error in initial stock update:', error);
-  });
+    console.log(`Found ${stockList.length} items to update`);
 
-  // Schedule to run at midnight every day
-  stockUpdateJob = schedule.scheduleJob("0 0 * * *", () => {
-    console.log('Starting midnight stock update job...');
-    fetchAndUpdateStock().catch(error => {
-      console.error('Error in scheduled stock update:', error);
-    });
-  });
-}
+    const articleNoProperty = 'articelno';
+    
+    if (!stockList[0].hasOwnProperty(articleNoProperty)) {
+      console.log('Invalid stock list format');
+      return;
+    }
 
-export function stopStockUpdateScheduler() {
-  if (stockUpdateJob) {
-    stockUpdateJob.cancel();
-    stockUpdateJob = null;
+    const BATCH_SIZE = 5;
+    const totalBatches = Math.ceil(stockList.length / BATCH_SIZE);
+    
+    for (let i = 0; i < stockList.length; i += BATCH_SIZE) {
+      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+      const batch = stockList.slice(i, i + BATCH_SIZE);
+      
+      console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} items)`);
+      
+      if (!client) {
+        throw new Error("SOAP client is not initialized");
+      }
+      const currentClient = client;
+      await Promise.all(
+        batch.map(stockItem => updateProductWithRetry(currentClient, sessionToken, stockItem))
+      );
+    }
+
+    const endTime = Date.now();
+    console.log(`Stock update completed in ${(endTime - startTime) / 1000} seconds`);
+  } catch (error) {
+    console.error('Error in fetchAndUpdateStock:', error);
+    throw error;
   }
 }
