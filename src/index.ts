@@ -15,7 +15,7 @@ import { initializeStockUpdateScheduler } from '@/controllers/schedulerControlle
 dotenv.config();
 
 const app = express();
-app.set('trust proxy', 1); 
+// app.set('trust proxy', 1); 
 
 // Configure CORS
 const corsOptions = {
