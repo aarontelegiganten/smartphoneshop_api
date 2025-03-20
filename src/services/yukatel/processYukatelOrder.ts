@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { createOrder } from '@/services/yukatel/createYukatelOrder';
 import Order , { OrderLine } from '@/models/graphqlOrder';
+import { YukatelError, YukatelResponse } from '@/models/YukatelOrderItem';
 
 dotenv.config();
 const authcode = process.env.YUKATEL_AUTH_CODE || '';
@@ -9,10 +10,12 @@ const vpnr = Number(process.env.YUKATEL_VPNR);
 
 export default async function processYukatelOrder(order: Order): Promise<void> {
   try {
+    // Validate the order structure
     if (!order?.data?.orderById?.orderLines || !Array.isArray(order.data.orderById.orderLines)) {
       throw new Error("Invalid order structure: orderLines is missing or not an array.");
     }
 
+    // Construct the Yukatel order request
     const yukatelOrderRequest = {
       items: order.data.orderById.orderLines.map((orderLine: OrderLine) => {
         if (!orderLine.articleNumber || !orderLine.amount) {
@@ -29,30 +32,26 @@ export default async function processYukatelOrder(order: Order): Promise<void> {
 
     console.log("Sending Yukatel Order Request:", JSON.stringify(yukatelOrderRequest, null, 2));
 
-    const response = await createOrder(authcode, vpnr, yukatelOrderRequest);
+    // Make the API call to create the order
+    const response:YukatelResponse = await createOrder(authcode, vpnr, yukatelOrderRequest);
 
-    console.log("Yukatel Order Response:", response);
+    // Log the full response on success
+    if (response.status) {
+      console.log("✅ Order successfully processed!");
+      console.log("Full Response:", JSON.stringify(response, null, 2)); // Log full response to inspect other details (like msg, order_id, etc.)
+    } else {
+      // Handle errors if status is false
+      console.error("❌ Order failed:");
+      if (response.errors) {
+        response.errors.forEach((error: YukatelError) => {
+          console.error(`- Error Code: ${error.code}, Message: ${error.message}, Article Number: ${error.artnr}`);
+        });
+      } else {
+        console.error(`Error Message: ${response.msg}`);
+      }
+    }
   } catch (error) {
-    console.error("Error processing Yukatel order:", error);
+    // Log unexpected errors (e.g., network failure, invalid order structure)
+    console.error("🚨 Error processing Yukatel order:", error);
   }
 }
-
-
-// export default async function processYukatelOrder(order: Order): Promise<void> {
-//   try {
-//     const yukatelOrderRequest = {
-//       items: order.data.orderById.orderLines.map((orderLine: OrderLine) => ({
-//         article_number: Number(orderLine.articleNumber),
-//         requested_stock: Number(orderLine.amount),
-//       })),
-//       customer_address_id: 0, 
-//       customer_reference: vpnr.toString(),
-//     };
-
-   
-//     const response = await createOrder(authcode, vpnr, yukatelOrderRequest);
-//     console.log('Yukatel Order Response:', response);
-//   } catch (error) {
-//     console.error('Error processing Yukatel order:', error);
-//   }
-// }

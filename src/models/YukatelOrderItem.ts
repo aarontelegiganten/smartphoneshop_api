@@ -18,7 +18,17 @@ export interface YukatelOrder {
     items: YukatelOrderItem[];
 }
 
-export interface YukatelResponse {
-    status: number;
+export interface YukatelError {
+    code: string;
     message: string;
-}
+    artnr: number;
+  }
+  
+  export interface YukatelResponse {
+    status: boolean;
+    msg: string;
+    order_id?: number; // Present only if status is true
+    errors?: YukatelError[]; // Present only if status is false
+  }
+  
+  
