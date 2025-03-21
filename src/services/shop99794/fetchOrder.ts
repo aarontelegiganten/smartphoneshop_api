@@ -4,13 +4,28 @@ import getNewAuthToken from '@/utils/getNewAuthToken';
 
 // Define the GraphQL query or mutation
 const query = `
-query($id: ID!) {
+query ($id: ID!) {
   orderById(id: $id) {
     id
     totalItems
     createdAt
     comments { internal external }
-    orderLines { productId productTitle variantId variantTitle supplierNumber articleNumber amount }
+    orderLines { 
+      productId 
+      productTitle 
+      variantId 
+      variantTitle 
+      supplierNumber 
+      articleNumber 
+      amount 
+    }
+    payment { 
+      id 
+      paymentMethod { 
+        id 
+       
+      }
+    }
   }
 },
 `;

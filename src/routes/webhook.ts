@@ -4,6 +4,9 @@ import verifyWebhook  from '@/utils/verifyWebhook';
 import fetchOrder from '@/services/shop99794/fetchOrder';
 import processMobileAddsOrder from '@/services/mobileadds/processMobileAddsOrder';
 import processYukatelOrder from '@/services/yukatel/processYukatelOrder';
+import OrderPayment from '@/models/orderPayment';
+import { MailService } from '@/services/mail/mailService'; // Import MailService
+const mailService = new MailService(); // Initialize mail service
 // import rateLimit from 'express-rate-limit';
 // import { isUpdateRunning } from '@/controllers/schedulerController';
 
@@ -100,6 +103,30 @@ const webhookToken = process.env.WEBHOOKTOKEN;
 //     res.status(400).send(error.message);
 //   }
 // });
+
+
+// 📌 Product Update Webhook (Optional, Keep As Is)
+router.post('/webhook/product-updated', (req: Request, res: Response) => {
+  if (!webhookToken || webhookToken.trim() === '') {
+    return res.status(500).send('Webhook token is missing');
+  }
+
+  const payload = Buffer.from(JSON.stringify(req.body));
+  const secretKey = webhookToken;
+
+  try {
+    const isValid: boolean = verifyWebhook(payload, secretKey, req);
+    if (!isValid) {
+      return res.status(401).send('Invalid HMAC');
+    }
+
+    res.status(200).send('Webhook verified');
+    console.log(JSON.parse(payload.toString('utf-8')));
+  } catch (error: any) {
+    res.status(400).send(error.message);
+  }
+});
+
 router.post('/webhook/order-created', async (req: Request, res: Response) => {
   if (!webhookToken || webhookToken.trim() === '') {
     return res.status(500).send('Webhook token is missing');
@@ -125,20 +152,41 @@ router.post('/webhook/order-created', async (req: Request, res: Response) => {
         console.log('Order not found');
         return;
       }
-
+      console.log('Order:', JSON.stringify(order));
+      
       const supplierNumber: string | null = order.data.orderById.orderLines[0]?.supplierNumber?.trim() || null;
+      const payment: OrderPayment | null = order.data.orderById.payment;
 
       if (!supplierNumber) {
         console.log('This is not a Mobileadds or Yukatel product');
         return;
       }
 
-      if (supplierNumber === '199021') {
-        // 📌 Process Mobileadds Order
+      if (supplierNumber === '505066') {
+        if (payment?.paymentMethod?.id === "2") {
+
+          // 📧 Send Email Notification
+          await mailService.sendMail(
+            'info@smartphoneshop.dk',  // Replace with the actual recipient
+            'Order Requires Manual Processing',
+            `Order ID ${orderId} with supplier YUKATEL and payment method banktransfer requires manual processing.`,
+            `<p>Order <b>${orderId}</b> with supplier YUKATEL requires manual handling due to payment method banktransfer.</p>`
+          );
+
+          return;
+        } else {
+          console.log('Processing Yukatel order...');
+          await processYukatelOrder(order);
+          await mailService.sendMail(
+            'info@smartphoneshop.dk',  // Replace with the actual recipient
+            'Order Requires Manual Processing',
+            `Order ID ${orderId} with supplier YUKATEL.`,
+            `<p>Order <b>${orderId}</b> with supplier YUKATEL has been send to YUKATEL.</p>`
+          );
+        }
+      } else if (supplierNumber === '199021') {
+        console.log('Processing Mobileadds order...');
         await processMobileAddsOrder(order);
-      } else if (supplierNumber === '505066') {
-        // 📌 Process Yukatel Order
-        await processYukatelOrder(order);
       } else {
         console.log(`Unknown supplier: ${supplierNumber}`);
       }
@@ -150,26 +198,7 @@ router.post('/webhook/order-created', async (req: Request, res: Response) => {
   }
 });
 
-// 📌 Product Update Webhook (Optional, Keep As Is)
-router.post('/webhook/product-updated', (req: Request, res: Response) => {
-  if (!webhookToken || webhookToken.trim() === '') {
-    return res.status(500).send('Webhook token is missing');
-  }
 
-  const payload = Buffer.from(JSON.stringify(req.body));
-  const secretKey = webhookToken;
 
-  try {
-    const isValid: boolean = verifyWebhook(payload, secretKey, req);
-    if (!isValid) {
-      return res.status(401).send('Invalid HMAC');
-    }
-
-    res.status(200).send('Webhook verified');
-    console.log(JSON.parse(payload.toString('utf-8')));
-  } catch (error: any) {
-    res.status(400).send(error.message);
-  }
-});
 
 export default router;

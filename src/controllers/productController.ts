@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { createSoapClient, setLanguage } from '@/services/soap/soapClient';
 import { authenticate } from '@/services/soap/soapClient';
 import { fetchProductById, fetchProductByItemNumber } from '@/services/soap/getProductService';
+import { getOrderPayment } from '@/services/soap/getOrderService';
 import axios from "axios";
 import schedule from "node-schedule";
 import * as soap from 'soap';
@@ -298,5 +299,26 @@ export async function fetchAndUpdateStock() {
   } catch (error) {
     console.error('Error in fetchAndUpdateStock:', error);
     throw error;
+  }
+}
+
+export async function getOrderPaymentController(req: Request, res: Response) {
+  try {
+    const { orderId } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ message: "Username and password are required" });
+    }
+
+    const language = languageISO || "EN";
+    const client = await createSoapClient();
+    const sessionToken = await authenticate(client, username, password);
+    await setLanguage(client, language);
+    
+    const orderpayment = await getOrderPayment(client, sessionToken, orderId);
+    return res.status(200).json(orderpayment);
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 }

@@ -1,9 +1,5 @@
 import * as soap from 'soap'; 
-import { Product, ProductGetByIdResponse } from "@/models/soapProduct"; 
-
-// Constants
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000;
+import { withRetry } from '@/utils/withRetry';
 
 // Interfaces
 interface ProductResponse {
@@ -55,21 +51,7 @@ function validateItemNumber(itemNumber: string): void {
   }
 }
 
-async function withRetry<T>(
-  operation: () => Promise<T>,
-  maxRetries: number = MAX_RETRIES,
-  delay: number = RETRY_DELAY
-): Promise<T> {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error) {
-      if (attempt === maxRetries) throw error;
-      await new Promise(resolve => setTimeout(resolve, delay * attempt));
-    }
-  }
-  throw new Error('Operation failed after retries');
-}
+
 
 function createSoapHeader(sessionToken: string): SoapHeader {
   return {

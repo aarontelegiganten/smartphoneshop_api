@@ -1,6 +1,7 @@
 import express from 'express';
 import type { Request, Response } from 'express';
 import getXmlData from '@/services/xml/fetchMobileAdds';
+import fetchOrder from '@/services/shop99794/fetchOrder';
 
 const router = express.Router();
 router.get('/fetch-xml', (req: Request, res: Response) => {
@@ -19,5 +20,7 @@ router.get('/fetch-xml', (req: Request, res: Response) => {
     res.status(500).send('Error fetching XML data');
   }
 });
+
+
 
 export default router;

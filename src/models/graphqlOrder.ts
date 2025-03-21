@@ -1,3 +1,5 @@
+import OrderPayment from "./orderPayment";
+
 export interface OrderLine {
   productId: string;
   productTitle: string;
@@ -16,6 +18,7 @@ export default interface Order {
       createdAt: string;
       comments: Record<string, []>;
       orderLines: OrderLine[];
+      payment: OrderPayment;
     };
   };
 }
