@@ -10,6 +10,7 @@ import WebhookRoutes from '@/routes/webhook';
 import mobileAddsRoute from '@/routes/mobileadds';
 import mailchimpRoutes from '@/routes/mailchimpRoutes';
 import productRoutes from '@/routes/soapProductRoutes';
+import yukatelRoutes from '@/routes/yukatelRoutes';
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.use('/api', WebhookRoutes);
 app.use('/api', mobileAddsRoute);
 app.use('/api', mailchimpRoutes);
 app.use('/api', productRoutes);
+app.use('/api', yukatelRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 

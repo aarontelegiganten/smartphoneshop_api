@@ -8,7 +8,7 @@ export interface YukatelResponse {
     orderid?: number;
 }
 
-export async function createOrder(
+export async function createYukatelOrder(
     authcode: string,
     vpnr: number,
     orderData: CreateOrderRequest

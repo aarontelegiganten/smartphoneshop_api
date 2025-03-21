@@ -152,7 +152,7 @@ router.post('/webhook/order-created', async (req: Request, res: Response) => {
         console.log('Order not found');
         return;
       }
-      console.log('Order:', JSON.stringify(order));
+      // console.log('Order:', JSON.stringify(order));
       
       const supplierNumber: string | null = order.data.orderById.orderLines[0]?.supplierNumber?.trim() || null;
       const payment: OrderPayment | null = order.data.orderById.payment;

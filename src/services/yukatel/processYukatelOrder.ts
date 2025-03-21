@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { createOrder } from '@/services/yukatel/createYukatelOrder';
+import { createYukatelOrder } from '@/services/yukatel/createYukatelOrder';
 import Order , { OrderLine } from '@/models/graphqlOrder';
 import { YukatelError, YukatelResponse } from '@/models/YukatelOrderItem';
 
@@ -33,7 +33,7 @@ export default async function processYukatelOrder(order: Order): Promise<void> {
     console.log("Sending Yukatel Order Request:", JSON.stringify(yukatelOrderRequest, null, 2));
 
     // Make the API call to create the order
-    const response:YukatelResponse = await createOrder(authcode, vpnr, yukatelOrderRequest);
+    const response:YukatelResponse = await createYukatelOrder(authcode, vpnr, yukatelOrderRequest);
 
     // Log the full response on success
     if (response.status) {
