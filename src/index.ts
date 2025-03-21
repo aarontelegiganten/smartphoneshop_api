@@ -10,7 +10,6 @@ import WebhookRoutes from '@/routes/webhook';
 import mobileAddsRoute from '@/routes/mobileadds';
 import mailchimpRoutes from '@/routes/mailchimpRoutes';
 import productRoutes from '@/routes/soapProductRoutes';
-import { initializeStockUpdateScheduler } from '@/controllers/schedulerController';
 
 dotenv.config();
 
@@ -37,8 +36,6 @@ app.use('/api', mailchimpRoutes);
 app.use('/api', productRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Start the stock update scheduler
-initializeStockUpdateScheduler();
 
 const PORT = process.env.PORT ?? 8080;
 const server = app.listen(PORT, () => {
