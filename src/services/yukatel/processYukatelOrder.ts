@@ -23,6 +23,8 @@ export default async function processYukatelOrder(order: Order): Promise<void> {
         if (!orderLine.articleNumber || !orderLine.amount) {
           throw new Error(`Invalid order line data: ${JSON.stringify(orderLine)}`);
         }
+        console.log(`Article Number: ${orderLine.articleNumber}, Amount: ${orderLine.amount}`);
+
         return {
           article_number: parseInt(orderLine.articleNumber, 10),
           requested_stock: parseInt(orderLine.amount.toString(), 10),
