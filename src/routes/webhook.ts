@@ -152,44 +152,53 @@ router.post('/webhook/order-created', async (req: Request, res: Response) => {
         console.log('Order not found');
         return;
       }
-      // console.log('Order:', JSON.stringify(order));
-      
-      const supplierNumber: string | null = order.data.orderById.orderLines[0]?.supplierNumber?.trim() || null;
+
       const payment: OrderPayment | null = order.data.orderById.payment;
 
-      if (!supplierNumber) {
-        console.log('This is not a Mobileadds or Yukatel product');
-        return;
-      }
+      for (const product of order.data.orderById.orderLines) {
+        const supplierNumber: string | null = product?.supplierNumber?.trim() || null;
 
-      if (supplierNumber === '505066') {
-        if (payment?.paymentMethod?.id === "2") {
-
-          // 📧 Send Email Notification
-          await mailService.sendMail(
-            'info@smartphoneshop.dk',  // Replace with the actual recipient
-            'Order Requires Manual Processing',
-            `Order ID ${orderId} with supplier YUKATEL and payment method banktransfer requires manual processing.`,
-            `<p>Order <b>${orderId}</b> with supplier YUKATEL requires manual handling due to payment method banktransfer.</p>`
-          );
-
-          return;
-        } else {
-          console.log('Processing Yukatel order...');
-          await processYukatelOrder(order);
-          await mailService.sendMail(
-            'info@smartphoneshop.dk',  // Replace with the actual recipient
-            'Order Requires Manual Processing',
-            `Order ID ${orderId} with supplier YUKATEL.`,
-            `<p>Order <b>${orderId}</b> with supplier YUKATEL has been send to YUKATEL.</p>`
-          );
+        if (!supplierNumber) {
+          console.log(`Product ${product.productTitle} does not have a supplier number. Skipping.`);
+          continue;
         }
-      } else if (supplierNumber === '199021') {
-        console.log('Processing Mobileadds order...');
-        await processMobileAddsOrder(order);
-      } else {
-        console.log(`Unknown supplier: ${supplierNumber}`);
+
+        if (supplierNumber === '505066') {
+          if (payment?.paymentMethod?.id === "2") {
+
+            // 📧 Send Email Notification
+            await mailService.sendMail(
+              'info@smartphoneshop.dk',  // Replace with the actual recipient
+              'Order Requires Manual Processing',
+              `Order ID ${orderId} with supplier YUKATEL and payment method banktransfer requires manual processing.`,
+              `<p>Order <b>${orderId}</b> with supplier YUKATEL requires manual handling due to payment method banktransfer.</p>`
+            );
+
+            continue; // Skip processing this product and move to the next
+          } else {
+            console.log(`Processing YUKATEL product: ${product.productTitle}`);
+            await processYukatelOrder(order);
+            await mailService.sendMail(
+              'info@smartphoneshop.dk',  // Replace with the actual recipient
+              'Yukatel Order Processed',
+              `Order ID ${orderId} with supplier YUKATEL.`,
+              `<p>Order <b>${orderId}</b> with supplier YUKATEL has been sent to YUKATEL.</p>`
+            );
+          }
+        } else if (supplierNumber === '199021') {
+          console.log(`Processing Mobileadds product: ${product.productTitle}`);
+          await processMobileAddsOrder(order);
+          await mailService.sendMail(
+            'info@smartphoneshop.dk',  // Replace with the actual recipient
+            'Order Requires Manual Processing',
+            `Order ID ${orderId} with supplier MobileAdds.`,
+            `<p>Order <b>${orderId}</b> with supplier YUKATEL has been sent to YUKATEL.</p>`
+          );
+        } else {
+          console.log(`Unknown supplier for product ${product.productTitle}: ${supplierNumber}`);
+        }
       }
+
     } catch (error) {
       console.error('Error processing order:', error);
     }
@@ -197,6 +206,7 @@ router.post('/webhook/order-created', async (req: Request, res: Response) => {
     res.status(400).send(error.message);
   }
 });
+
 
 
 
