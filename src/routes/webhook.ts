@@ -192,7 +192,7 @@ router.post('/webhook/order-created', async (req: Request, res: Response) => {
             'info@smartphoneshop.dk',  // Replace with the actual recipient
             'Order Requires Manual Processing',
             `Order ID ${orderId} with supplier MobileAdds.`,
-            `<p>Order <b>${orderId}</b> with supplier YUKATEL has been sent to YUKATEL.</p>`
+            `<p>Order <b>${orderId}</b> with supplier MobileAdds has been sent to MobileAdds.</p>`
           );
         } else {
           console.log(`Unknown supplier for product ${product.productTitle}: ${supplierNumber}`);
