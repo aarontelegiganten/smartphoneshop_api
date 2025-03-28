@@ -1,12 +1,19 @@
 import axios from "axios";
 import dotenv from "dotenv";
-
+import { createSoapClient, setLanguage } from '@/services/soap/soapClient';
+import { authenticate } from '@/services/soap/soapClient';
+import { fetchAllProductsWithPagination } from "@/services/soap/getProductService";
+import { MailchimpProduct } from "@/models/mailchimpProduct";
 dotenv.config();
 
 // --- Configuration ---
 const MAILCHIMP_API_KEY = process.env.MAILCHIMP_API_KEY;
 const MAILCHIMP_STORE_ID = process.env.MAILCHIMP_STORE_ID;
 const MAILCHIMP_DC = process.env.MAILCHIMP_DC;
+
+const username = process.env.USERNAME;
+const password = process.env.PASSWORD;
+const languageISO = "DK";
 
 const mailchimpApi = axios.create({
   baseURL: `https://${MAILCHIMP_DC}.api.mailchimp.com/3.0/ecommerce/stores/${MAILCHIMP_STORE_ID}`,
@@ -35,7 +42,7 @@ async function retryRequest(fn: () => Promise<any>, retries = 3, delayMs = 2000)
 }
 
 // ✅ Function to Sync or Update Product in Mailchimp
-export async function syncOrUpdateProductToMailchimp(productData: any): Promise<void> {
+export async function syncOrUpdateProductToMailchimp(productData: MailchimpProduct): Promise<void> {
   try {
     const productId = productData.id;
     if (!productId) {
@@ -77,37 +84,42 @@ export async function syncOrUpdateProductToMailchimp(productData: any): Promise<
 }
 
 
-
-// ✅ Delete All Products in Mailchimp
-export async function deleteAllProducts(): Promise<void> {
+export async function syncAllProductsToMailchimp(): Promise<void> {
   try {
-    let totalDeleted = 0;
-    let offset = 0;
-    const count = 100;
-    let products = [];
+    const client = await createSoapClient();
 
-    do {
-      const response = await mailchimpApi.get(`/products?count=${count}&offset=${offset}`);
-      products = response.data.products;
+    // Check if username and password are provided
+    if (!username || !password) {
+      throw new Error("Username and password are required");
+    }
 
-      if (products.length === 0) break; // No more products
+    // Set language, default to 'EN' if no language is provided
+    const language = languageISO || 'EN';
+    console.log('Authenticating...');
+    await setLanguage(client, language);
+    // Authenticate and get session token
+    const sessionToken = await authenticate(client, username, password);
+    
+    // Fetch all products with pagination
+    await fetchAllProductsWithPagination(client, sessionToken);
+    
+ 
+      // const productData = {
+      //   id: String(product.Id),      // Mailchimp ID should be a string
+      //   title: product.Title,        // Product title
+      //   price: String(product.Price), // Price as a string (Mailchimp expects it this way)
+      //   description: product.Description || '', // Description (default to empty if missing)
+      //   images: String(product.Pictures)|| [],  // If product has images, use them
+      // };
 
-      for (const product of products) {
-        await mailchimpApi.delete(`/products/${product.id}`);
-        console.log(`🗑 Deleted product: ${product.id}`);
-        totalDeleted++;
-      }
+      // // Sync or update the product to Mailchimp
+      // await syncOrUpdateProductToMailchimp(productData);
+    // }
 
-      offset += count; // Move to next batch
-    } while (products.length > 0);
-
-    console.log(`✅ Deleted ${totalDeleted} products successfully.`);
   } catch (error: any) {
-    console.error('❌ Error deleting products:', error.response?.data || error.message);
+    console.error("❌ Error syncing products to Mailchimp:", error.message);
   }
 }
-
-
 
 // async function createMailchimpStore() {
 //     try {

@@ -1,6 +1,8 @@
 import * as soap from 'soap'; 
 import { withRetry } from '@/utils/withRetry';
 import { Product } from '@/models/soapProduct';
+import Mail from 'nodemailer/lib/mailer';
+import { MailchimpProduct } from '@/models/mailchimpProduct';
 
 // Interfaces
 interface ProductResponse {
@@ -211,10 +213,23 @@ export async function fetchCategoryById(client: soap.Client, sessionToken: strin
   }
 }
 
+
 export async function fetchAllProductsWithPagination(client: soap.Client, sessionToken: string): Promise<Product[]> {
   try {
     const soapHeader = createSoapHeader(sessionToken);
     client.addSoapHeader(soapHeader);
+
+    // Set the required fields for product fetch
+    await withRetry(async () => {
+      await new Promise<void>((resolve, reject) => {
+        client.Product_SetFields({
+          Fields: 'Id,Title,Price,Pictures,Description' // Only the fields you need
+        }, (err: unknown) => {
+          if (err) reject(new Error(`Error setting product fields: ${err}`));
+          resolve();
+        });
+      });
+    });
 
     let page = 1;
     let allProducts: Product[] = [];
@@ -229,6 +244,9 @@ export async function fetchAllProductsWithPagination(client: soap.Client, sessio
           }, (err: unknown, response: any) => {
             if (err) reject(new Error(`Error fetching products: ${err}`));
 
+            // Log the full response for debugging
+            console.log('API Response:', response);
+
             // Ensure the response is structured as expected
             if (response?.Product_GetAllResult?.items) {
               resolve({ items: response.Product_GetAllResult.items });
@@ -239,57 +257,22 @@ export async function fetchAllProductsWithPagination(client: soap.Client, sessio
         });
       });
 
-      // Map the response items to the full Product structure
+      // Log the fetched items
+      console.log('Fetched Products on page', page, productsResponse.items);
+
+      // Map the response items to the required fields only
       const mappedProducts: Product[] = productsResponse.items.map((item: any) => {
         return {
-          BuyingPrice: item.BuyingPrice || 0,
-          CallForPrice: item.CallForPrice || false,
-          CategoryId: item.CategoryId || 0,
-          DateCreated: item.DateCreated || '',
-          DateUpdated: item.DateUpdated || '',
-          Description: item.Description || '',
-          DescriptionLong: item.DescriptionLong || '',
-          DescriptionShort: item.DescriptionShort || '',
-          DisableOnEmpty: item.DisableOnEmpty || false,
-          Discount: item.Discount || 0,
-          DiscountGroupId: item.DiscountGroupId || 0,
-          DiscountType: item.DiscountType || '',
-          Ean: item.Ean || '',
-          FocusCart: item.FocusCart || false,
-          FocusFrontpage: item.FocusFrontpage || false,
-          GuidelinePrice: item.GuidelinePrice || 0,
-          Id: item.Id,
-          ItemNumber: item.ItemNumber,
-          ItemNumberSupplier: item.ItemNumberSupplier || '',
-          LanguageISO: item.LanguageISO || '',
-          MinAmount: item.MinAmount || 0,
-          Online: item.Online || false,
-          OutOfStockBuy: item.OutOfStockBuy || undefined,
-          Price: item.Price,
-          ProducerId: item.ProducerId,
-          ProductUrl: item.ProductUrl || '',
-          RelatedProductIds: item.RelatedProductIds || [],
-          RelationCode: item.RelationCode || '',
-          SeoCanonical: item.SeoCanonical || '',
-          SeoDescription: item.SeoDescription || '',
-          SeoKeywords: item.SeoKeywords || '',
-          SeoLink: item.SeoLink || '',
-          SeoTitle: item.SeoTitle || '',
-          Sorting: item.Sorting || 0,
-          Status: item.Status || false,
-          Stock: item.Stock || 0,
-          StockLow: item.StockLow || 0,
-          Title: item.Title,
-          Type: item.Type || null, // Update this with proper handling if needed
-          UnitId: item.UnitId || 0,
-          Url: item.Url || '',
-          VatGroupId: item.VatGroupId || 0,
-          Weight: item.Weight || 0,
-          DeliveryId: item.DeliveryId || 0,          // Default value for missing DeliveryId
-          DeliveryTimeId: item.DeliveryTimeId || 0,  // Default value for missing DeliveryTimeId
-          VariantTypes: item.VariantTypes || '',     // Default empty string for missing VariantTypes
+          Id: item.Id, // Product ID
+          Title: item.Title, // Product Title
+          Price: item.Price, // Product Price
+          Description: item.Description || '', // Product Description (if it exists)
+          Pictures: item.Pictures || [], // Product Images (if they exist)
         };
       });
+
+      // Log the mapped products
+      console.log('Mapped Products:', mappedProducts);
 
       // Merge the current page products with allProducts
       allProducts = [...allProducts, ...mappedProducts];
@@ -298,6 +281,9 @@ export async function fetchAllProductsWithPagination(client: soap.Client, sessio
       hasMoreProducts = productsResponse.items.length === 100; // Assuming 100 items per page
       page++;
     }
+
+    // Log the final products array
+    console.log('All Fetched Products:', allProducts);
 
     return allProducts;
   } catch (error) {

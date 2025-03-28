@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { Request, Response } from 'express';
-import verifyWebhook  from '@/utils/verifyWebhook';
+import verifyWebhook from '@/utils/verifyWebhook';
 import fetchOrder from '@/services/shop99794/fetchOrder';
 import processMobileAddsOrder from '@/services/mobileadds/processMobileAddsOrder';
 import processYukatelOrder from '@/services/yukatel/processYukatelOrder';
@@ -24,7 +24,7 @@ const router = Router();
 
 // async function processWebhookQueue() {
 //   if (isProcessingQueue || webhookQueue.length === 0) return;
-  
+
 //   isProcessingQueue = true;
 //   while (webhookQueue.length > 0) {
 //     const webhook = webhookQueue.shift();
@@ -206,6 +206,68 @@ router.post('/webhook/order-created', async (req: Request, res: Response) => {
     res.status(400).send(error.message);
   }
 });
+
+
+router.post('/webhook/order/', async (req: Request, res: Response) => {
+  try {
+    const orderId = req.body.id;
+    const order = await fetchOrder(orderId);
+    if (!order) {
+      console.log('Order not found');
+      return;
+    }
+
+    const payment: OrderPayment | null = order.data.orderById.payment;
+
+    for (const product of order.data.orderById.orderLines) {
+      const supplierNumber: string | null = product?.supplierNumber?.trim() || null;
+
+      if (!supplierNumber) {
+        console.log(`Product ${product.productTitle} does not have a supplier number. Skipping.`);
+        continue;
+      }
+
+      if (supplierNumber === '505066') {
+        if (payment?.paymentMethod?.id === "2") {
+
+          // 📧 Send Email Notification
+          await mailService.sendMail(
+            'info@smartphoneshop.dk',  // Replace with the actual recipient
+            'Order Requires Manual Processing',
+            `Order ID ${orderId} with supplier YUKATEL and payment method banktransfer requires manual processing.`,
+            `<p>Order <b>${orderId}</b> with supplier YUKATEL requires manual handling due to payment method banktransfer.</p>`
+          );
+
+          continue; // Skip processing this product and move to the next
+        } else {
+          console.log(`Processing YUKATEL product: ${product.productTitle}`);
+          await processYukatelOrder(order);
+          await mailService.sendMail(
+            'info@smartphoneshop.dk',  // Replace with the actual recipient
+            'Yukatel Order Processed',
+            `Order ID ${orderId} with supplier YUKATEL.`,
+            `<p>Order <b>${orderId}</b> with supplier YUKATEL has been sent to YUKATEL.</p>`
+          );
+        }
+      } else if (supplierNumber === '199021') {
+        console.log(`Processing Mobileadds product: ${product.productTitle}`);
+        await processMobileAddsOrder(order);
+        await mailService.sendMail(
+          'info@smartphoneshop.dk',  // Replace with the actual recipient
+          'Order Requires Manual Processing',
+          `Order ID ${orderId} with supplier MobileAdds.`,
+          `<p>Order <b>${orderId}</b> with supplier MobileAdds has been sent to MobileAdds.</p>`
+        );
+      } else {
+        console.log(`Unknown supplier for product ${product.productTitle}: ${supplierNumber}`);
+      }
+    }
+
+  } catch (error) {
+    console.error('Error processing order:', error);
+  }
+}
+);
 
 
 
