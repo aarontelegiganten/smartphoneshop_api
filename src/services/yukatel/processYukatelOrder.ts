@@ -4,11 +4,12 @@ import { updateYukatelOrder } from '@/services/yukatel/updateYukatelOrder'; // I
 import Order, { OrderLine } from '@/models/graphqlOrder';
 import { YukatelError, YukatelResponse } from '@/models/YukatelOrderItem';
 import { fetchYukatelOrders } from '@/services/yukatel/fetchYukatelOrders'; // Assuming this function fetches orders from Yukatel
-import moment from 'moment';
+import moment from "moment-timezone";
 
 dotenv.config();
 const authcode = process.env.YUKATEL_AUTH_CODE || '';
 const vpnr = Number(process.env.YUKATEL_VPNR);
+
 
 export default async function processYukatelOrder(order: Order): Promise<void> {
   try {
@@ -39,15 +40,23 @@ export default async function processYukatelOrder(order: Order): Promise<void> {
     // Fetch current orders from Yukatel
     const orders = await fetchYukatelOrders(authcode, vpnr.toString());
 
-    // Check if there's an order from today
-    const today = moment().startOf('day');
+    // Set timezone to Berlin (same as Copenhagen)
+    const now = moment().tz("Europe/Berlin");
+    const cutoff = now.clone().hour(18).minute(0).second(0);
+
+    // Determine the correct starting point for order lookup
+    const orderCheckStart = now.isBefore(cutoff)
+      ? cutoff.clone().subtract(1, "day") // If before 18:00, check from yesterday at 18:00
+      : cutoff; // If after 18:00, check from today at 18:00
+
+    // Check if there's an order since the last cutoff time
     const latestOrder = orders?.data?.find((order) =>
-      moment(order.date_placed).isSame(today, 'day')
+      moment(order.date_placed).tz("Europe/Berlin").isAfter(orderCheckStart)
     );
 
     if (latestOrder) {
-      // If there's an order from today, update the order
-      console.log("Order from today found. Updating the order...");
+      // If an order exists within the valid timeframe, update it
+      console.log("Recent order found. Updating the order...");
       const updatedOrderResponse: YukatelResponse = await updateYukatelOrder(
         latestOrder.order_id,
         authcode,
@@ -67,8 +76,8 @@ export default async function processYukatelOrder(order: Order): Promise<void> {
         });
       }
     } else {
-      // No order from today, create a new order
-      console.log("No order from today. Creating a new order...");
+      // No order found in the valid timeframe, create a new one
+      console.log("No recent order found. Creating a new order...");
       const response: YukatelResponse = await createYukatelOrder(authcode, vpnr, yukatelOrderRequest);
 
       if (response.status) {
@@ -82,7 +91,6 @@ export default async function processYukatelOrder(order: Order): Promise<void> {
       }
     }
   } catch (error) {
-    // Log unexpected errors (e.g., network failure, invalid order structure)
     console.error("🚨 Error processing Yukatel order:", error);
   }
 }

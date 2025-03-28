@@ -1,15 +1,11 @@
+import axios from "axios";
+import * as soap from 'soap';
+import dotenv from 'dotenv';
 import { Request, Response } from 'express';
 import { createSoapClient, setLanguage } from '@/services/soap/soapClient';
 import { authenticate } from '@/services/soap/soapClient';
 import { fetchProductById, fetchProductByItemNumber } from '@/services/soap/getProductService';
 import { getOrderPayment } from '@/services/soap/getOrderService';
-import axios from "axios";
-import schedule from "node-schedule";
-import * as soap from 'soap';
-
-import dotenv from 'dotenv';
-import { error } from 'console';
-
 dotenv.config();
 
 const username = process.env.USERNAME;
