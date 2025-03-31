@@ -155,48 +155,64 @@ router.post('/webhook/order-created', async (req: Request, res: Response) => {
 
       const payment: OrderPayment | null = order.data.orderById.payment;
 
-      for (const product of order.data.orderById.orderLines) {
-        const supplierNumber: string | null = product?.supplierNumber?.trim() || null;
+      // Filter out products without a supplierNumber
+      const filteredOrderLines = order.data.orderById.orderLines.filter((product: any) => {
+        const supplierNumber = product?.supplierNumber?.trim();
+        return supplierNumber && supplierNumber !== ''; // Only keep products with a valid supplier number
+      });
 
-        if (!supplierNumber) {
-          console.log(`Product ${product.productTitle} does not have a supplier number. Skipping.`);
-          continue;
-        }
+      if (filteredOrderLines.length === 0) {
+        console.log('No products with valid supplier number found in this order.');
+        return;  // If no valid products, do not process or send email
+      }
+
+      let emailSent = false; // Flag to track if email has been sent
+
+      for (const product of filteredOrderLines) {
+        const supplierNumber: string = product?.supplierNumber?.trim() || '';
 
         if (supplierNumber === '505066') {
           if (payment?.paymentMethod?.id === "2") {
-
-            // 📧 Send Email Notification
+            // 📧 Send Email Notification only if payment method is bank transfer and requires manual processing
             await mailService.sendMail(
               'info@smartphoneshop.dk',  // Replace with the actual recipient
               'Order Requires Manual Processing',
               `Order ID ${orderId} with supplier YUKATEL and payment method banktransfer requires manual processing.`,
               `<p>Order <b>${orderId}</b> with supplier YUKATEL requires manual handling due to payment method banktransfer.</p>`
             );
-
+            emailSent = true; // Set flag to true indicating the email was sent
             continue; // Skip processing this product and move to the next
           } else {
             console.log(`Processing YUKATEL product: ${product.productTitle}`);
             await processYukatelOrder(order);
+            // Send email only after the order is processed successfully
             await mailService.sendMail(
               'info@smartphoneshop.dk',  // Replace with the actual recipient
               'Yukatel Order Processed',
               `Order ID ${orderId} with supplier YUKATEL.`,
               `<p>Order <b>${orderId}</b> with supplier YUKATEL has been sent to YUKATEL.</p>`
             );
+            emailSent = true; // Set flag to true indicating the email was sent
           }
         } else if (supplierNumber === '199021') {
           console.log(`Processing Mobileadds product: ${product.productTitle}`);
           await processMobileAddsOrder(order);
+          // Send email only after the order is processed successfully
           await mailService.sendMail(
             'info@smartphoneshop.dk',  // Replace with the actual recipient
-            'Order Requires Manual Processing',
+            'Order Processed for MobileAdds',
             `Order ID ${orderId} with supplier MobileAdds.`,
             `<p>Order <b>${orderId}</b> with supplier MobileAdds has been sent to MobileAdds.</p>`
           );
+          emailSent = true; // Set flag to true indicating the email was sent
         } else {
           console.log(`Unknown supplier for product ${product.productTitle}: ${supplierNumber}`);
         }
+      }
+
+      // If no email was sent, log that no processing was done
+      if (!emailSent) {
+        console.log(`No email was sent for Order ID ${orderId} as no valid processing occurred.`);
       }
 
     } catch (error) {
@@ -206,71 +222,4 @@ router.post('/webhook/order-created', async (req: Request, res: Response) => {
     res.status(400).send(error.message);
   }
 });
-
-
-router.post('/webhook/order/', async (req: Request, res: Response) => {
-  try {
-    const orderId = req.body.id;
-    const order = await fetchOrder(orderId);
-    if (!order) {
-      console.log('Order not found');
-      return;
-    }
-
-    const payment: OrderPayment | null = order.data.orderById.payment;
-
-    for (const product of order.data.orderById.orderLines) {
-      const supplierNumber: string | null = product?.supplierNumber?.trim() || null;
-
-      if (!supplierNumber) {
-        console.log(`Product ${product.productTitle} does not have a supplier number. Skipping.`);
-        continue;
-      }
-
-      if (supplierNumber === '505066') {
-        if (payment?.paymentMethod?.id === "2") {
-
-          // 📧 Send Email Notification
-          await mailService.sendMail(
-            'info@smartphoneshop.dk',  // Replace with the actual recipient
-            'Order Requires Manual Processing',
-            `Order ID ${orderId} with supplier YUKATEL and payment method banktransfer requires manual processing.`,
-            `<p>Order <b>${orderId}</b> with supplier YUKATEL requires manual handling due to payment method banktransfer.</p>`
-          );
-
-          continue; // Skip processing this product and move to the next
-        } else {
-          console.log(`Processing YUKATEL product: ${product.productTitle}`);
-          await processYukatelOrder(order);
-          await mailService.sendMail(
-            'info@smartphoneshop.dk',  // Replace with the actual recipient
-            'Yukatel Order Processed',
-            `Order ID ${orderId} with supplier YUKATEL.`,
-            `<p>Order <b>${orderId}</b> with supplier YUKATEL has been sent to YUKATEL.</p>`
-          );
-        }
-      } else if (supplierNumber === '199021') {
-        console.log(`Processing Mobileadds product: ${product.productTitle}`);
-        await processMobileAddsOrder(order);
-        await mailService.sendMail(
-          'info@smartphoneshop.dk',  // Replace with the actual recipient
-          'Order Requires Manual Processing',
-          `Order ID ${orderId} with supplier MobileAdds.`,
-          `<p>Order <b>${orderId}</b> with supplier MobileAdds has been sent to MobileAdds.</p>`
-        );
-      } else {
-        console.log(`Unknown supplier for product ${product.productTitle}: ${supplierNumber}`);
-      }
-    }
-
-  } catch (error) {
-    console.error('Error processing order:', error);
-  }
-}
-);
-
-
-
-
-
-export default router;
+ export default router;
