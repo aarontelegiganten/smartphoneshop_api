@@ -178,8 +178,10 @@ export interface Product {
   }
   
   interface ProductPicture {
-    Url: string;
-    AltText: string;
+  Id: number;
+  ProductId: number;
+  FileName:string;
+  Sorting: number; 
   }
   
   interface User {
@@ -210,7 +212,50 @@ export interface Product {
     Name: string;
   }
   
-  interface ProductVariant {
-    // Define fields based on the API response
+  export interface ProductVariant {
+    BuyingPrice: number;
+    DeliveryTime: ProductDeliveryTime;
+    DeliveryTimeId: number;
+    Description: string;
+    DescriptionLong: string;
+    DisableOnEmpty: boolean;
+    Discount: number;
+    DiscountType: string;
+    Ean: string;
+    Id: number;
+    ItemNumber: string;
+    ItemNumberSupplier: string;
+    MinAmount: number;
+    PictureId: number;
+    PictureIds: number[];
+    Price: number;
+    ProductId: number;
+    Sorting: number;
+    Status: boolean;
+    Stock: number;
+    StockLocations: ProductVariantStockLocation[];
+    StockLow: number;
+    Title: string;
+    Unit: ProductUnit;
+    VariantTypeValues: number[];
+    Weight: number;
+  }
+  
+  // Example placeholders for related interfaces
+  interface ProductDeliveryTime {
+    id: number;
+    name: string;
+    estimatedDays: number;
+  }
+  
+  interface ProductVariantStockLocation {
+    locationId: number;
+    quantity: number;
+  }
+  
+  interface ProductUnit {
+    id: number;
+    name: string;
+    abbreviation: string;
   }
   

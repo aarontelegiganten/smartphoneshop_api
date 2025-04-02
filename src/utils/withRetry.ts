@@ -18,3 +18,5 @@ export async function withRetry<T>(
   }
   throw new Error('Operation failed after retries');
 }
+
+export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
