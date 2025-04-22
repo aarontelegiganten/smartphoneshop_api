@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { getYukatelOrders } from "@/controllers/yukatelController";
+import { getYukatelOrderById, getYukatelOrders } from "@/controllers/yukatelController";
 
 const router = Router();
 
 router.get('/yukatel/orders', getYukatelOrders);  
-router.get('/yukatel/orders/:id', getYukatelOrders);
+router.get('/yukatel/orders/:id', getYukatelOrderById);
 export default router;

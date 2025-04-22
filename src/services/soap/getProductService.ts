@@ -647,7 +647,7 @@ export async function fetchAllProductsWithPagination(client: soap.Client, sessio
 
       let mailchimpVariants: MailchimpProductVariant[] = item.Variants.map((variant): MailchimpProductVariant => {
           const variantIdStr = variant.Id?.toString() || `var-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-          const sku = `SKU-${item.Id}-${variantIdStr}`;
+          const sku = item.Id;
           return {
             id: variantIdStr,
             title: variant.Title || 'Default Variant',
@@ -658,12 +658,12 @@ export async function fetchAllProductsWithPagination(client: soap.Client, sessio
        });
 
        if (mailchimpVariants.length === 0) {
-           const defaultVariantId = `${item.Id?.toString() || 'product'}-default`;
+           const defaultVariantId = item.Id?.toString();
            mailchimpVariants.push({
                id: defaultVariantId,
                title: item.Title || 'Default',
                price: item.Price || 0,
-               sku: `SKU-${item.Id?.toString() || 'product'}-DEFAULT`,
+               sku: item.Id?.toString(),
                inventory_quantity: 0,
            });
        }
