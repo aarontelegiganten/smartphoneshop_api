@@ -130,27 +130,31 @@ export const updateYukatelOrder = async (
     }
 
     // 4️⃣ Filter out non-product items and map existing ones
-    const excludedArticles = ["transpversich", "49", "59"];
+    const excludedArticles = ["transpversich", "49", "59", "51"];
     const existingItemsMap = new Map<number, number>();
 
     existingOrder.items.forEach((item: any) => {
       const articleNumber = Number(item.artnr);
       if (
         articleNumber &&
-        !excludedArticles.includes(item.artnr.toLowerCase?.() || item.artnr)
+        !excludedArticles.includes((item.artnr || "").toLowerCase())
       ) {
         existingItemsMap.set(articleNumber, item.quantity);
       }
     });
 
-    // 5️⃣ Merge in new items
-    newItems.forEach(({ article_number, requested_stock }) => {
-      const articleNumber = Number(article_number);
+    // 5️⃣ Filter and merge new items
+  newItems.forEach(({ article_number, requested_stock }) => {
+    const artnrStr = article_number.toString().toLowerCase();
+    if (!excludedArticles.includes(artnrStr)) {
       existingItemsMap.set(
-        articleNumber,
-        (existingItemsMap.get(articleNumber) || 0) + requested_stock
+        article_number,
+        (existingItemsMap.get(article_number) || 0) + requested_stock
       );
-    });
+    } else {
+      console.log(`⛔️ Skipping excluded article_number: ${article_number}`);
+    }
+  });
 
     // 6️⃣ Convert map to array
     const updatedItems = Array.from(existingItemsMap.entries()).map(

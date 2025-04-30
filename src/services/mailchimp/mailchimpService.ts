@@ -55,7 +55,20 @@ export async function findProductInMailchimp(productId: string) {
     }
   }
 }
-
+export async function findProductsInMailchimp() {
+  try {
+    const response = await mailchimpApi.get('/products/');
+    return response.data; // ✅ Product found, return it
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      console.log(`Products not found in Mailchimp.`);
+      return null; // ❌ Product does not exist
+    } else {
+      console.error('⚠️ Error finding products' , error.response?.data || error.message);
+      throw error; // ⚠️ Rethrow other errors
+    }
+  }
+}
 // ✅ Function to Sync or Update Product in Mailchimp
 export async function syncOrUpdateProductToMailchimp(productData: MailchimpProduct): Promise<void> {
   try {

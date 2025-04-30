@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 // import { readCSV, transformProductData } from '../services/csv/csvService';
-import { findProductInMailchimp, syncOrUpdateProductToMailchimp, syncAllProductsToMailchimp, deleteAllProducts } from '../services/mailchimp/mailchimpService';
+import { findProductInMailchimp, syncOrUpdateProductToMailchimp, syncAllProductsToMailchimp, deleteAllProducts, findProductsInMailchimp } from '../services/mailchimp/mailchimpService';
 
 const CSV_FILE_PATH = 'static/test.csv';
 const BASE_URL = 'https://smartphoneshop.dk';
@@ -44,6 +44,7 @@ export async function updateProductController(req: Request, res: Response) {
 export async function getOneProductController(req: Request, res: Response) {
   try {       
     const productId = req.params.id;
+    console.log('📦 Product ID:', productId);
     if (!productId) {
       return res.status(400).json({ error: 'Product ID is required.' });
     }
@@ -56,6 +57,20 @@ export async function getOneProductController(req: Request, res: Response) {
   } catch (error) {
     console.error('❌ Error retrieving product:', error);                     
     res.status(500).json({ error: 'Failed to retrieve product' });
+  }
+}
+
+export async function getProductsController(req: Request, res: Response) {
+  try {       
+
+    const products = await findProductsInMailchimp();
+    if (!products) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+    res.status(200).json(products);
+  } catch (error) {
+    console.error('❌ Error retrieving products:', error);                     
+    res.status(500).json({ error: 'Failed to retrieve products' });
   }
 }
 // // ✅ Update Products from CSV 

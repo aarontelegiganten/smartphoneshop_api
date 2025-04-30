@@ -27,7 +27,7 @@ export default async function processYukatelOrder(order: Order): Promise<void> {
           requested_stock: parseInt(orderLine.amount.toString(), 10),
         };
       }),
-      customer_address_id: 0,
+      customer_address_id: 14558,
       customer_reference: vpnr.toString(),
     };
 
@@ -56,13 +56,13 @@ export default async function processYukatelOrder(order: Order): Promise<void> {
 
     if (latestOrderDetailed.editable) {
       console.log("✏️ Latest order is editable. Updating...");
-
+      const customer_address_id = latestOrderDetailed.address_id;
       const updated = await updateYukatelOrder(
         Number(latestOrderDetailed.order_id),
         authcode,
         vpnr,
         yukatelOrderRequest.items,
-        yukatelOrderRequest.customer_address_id,
+        customer_address_id,
         yukatelOrderRequest.customer_reference
       );
 

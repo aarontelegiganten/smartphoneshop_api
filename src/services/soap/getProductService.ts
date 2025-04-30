@@ -2,7 +2,6 @@ import * as soap from 'soap';
 import { withRetry } from '@/utils/withRetry';
 // import { Product } from '@/models/soapProduct';
 import { MailchimpProduct, MailchimpProductImage, MailchimpProductVariant } from '@/models/mailchimpProduct';
-import { url } from 'inspector';
 
 // Interfaces
 interface ProductResponse {
@@ -135,7 +134,7 @@ export async function fetchProductByItemNumber(client: soap.Client, sessionToken
     await withRetry(async () => {
       await new Promise<void>((resolve, reject) => {
         client.Product_SetFields({
-          Fields: 'Id,ItemNumber,CustomData,Status,Producer,ProducerId,Title,Discount,Price,Pictures,Stock,Variants'
+          Fields: 'Id,ItemNumber,CustomData,Status,Producer,ProducerId,Title,Discount,Price,Pictures,Stock,Variants,Url,Online,SeoLink,ProductUrl'
         }, (err: unknown) => {
           if (err) reject(new Error(`Error setting product fields: ${err}`));
           resolve();
@@ -372,6 +371,7 @@ interface SoapProductItem {
   Title: string;
   Price: number;
   Url?: string;
+  ProductUrl?: string;
   Description?: string;
   Pictures?: { item?: SoapPicture | SoapPicture[] };
   Variants?: { item?: SoapVariantSimple | SoapVariantSimple[] };
@@ -565,7 +565,7 @@ export async function fetchAllProductsWithPagination(client: soap.Client, sessio
     await withRetry(async () => {
       await new Promise<void>((resolve, reject) => {
         client.Product_SetFields({
-          Fields: 'Id,Title,Price,Pictures,Description,Url,Variants'
+          Fields: 'Id,Title,Price,Pictures,Description,Url,Variants,ProductUrl'
         }, (err: unknown) => {
           if (err) reject(new Error(`Error setting product fields: ${err}`)); else resolve();
         });
@@ -618,7 +618,7 @@ export async function fetchAllProductsWithPagination(client: soap.Client, sessio
               Id: item.Id,
               Title: item.Title,
               Price: item.Price,
-              url: item.Url || '',
+              url: `https://smartphoneshop.dk${item.ProductUrl}` || '',
               Description: item.Description || '',
               Pictures: mappedPictures,
               Variants: mappedVariants,

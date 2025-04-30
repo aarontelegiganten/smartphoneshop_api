@@ -1,12 +1,12 @@
 import express from 'express';
-import { getOneProductController, updateProductController, syncAllProductsToMailchimpController, deleteProductsController } from '@/controllers/mailchimpController';
+import { getOneProductController, getProductsController, updateProductController, syncAllProductsToMailchimpController, deleteProductsController } from '@/controllers/mailchimpController';
 import { get } from 'axios';
 
 const router = express.Router();
 
-router.get('/mailchimp/products/:id', getOneProductController);
+router.get('/mailchimp/product/:id', getOneProductController);
 // ✅ Route: Get Single Product
-
+router.get('/mailchimp/products/', getProductsController);
 // ✅ Route: Process CSV and Sync Products
 router.put('/mailchimp/sync/products/', syncAllProductsToMailchimpController);
 

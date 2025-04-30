@@ -8,6 +8,8 @@ services:
       - "8080:8080"
     env_file:
       - .env
+    environment:
+      COMPOSE_BAKE: "true"
     restart: always
     volumes:
       - .:/app  # Syncs local files with the container
